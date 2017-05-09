@@ -153,15 +153,16 @@ if __name__=='__main__':
 			r_means.append(mean_recall)
 			r_stds.append(std_recall)
 
-		
+	
+			filename = 'results/quasi_regular_d_2_max_weight.mat'
+			scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 'path_trials': path_trials,
+										'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
+										'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
+
 	print 'Total p_means', np.array(p_means)
 	print 'Total p_stds', np.array(p_stds)
 
 	print 'Total r_means', np.array(r_means)
 	print 'Total r_stds', np.array(r_stds)
 
-	filename = 'results/quasi_regular_d_2_max_weight.mat'
-	# scipy.io.savemat('results/d_reg_first_spy_approxk4.mat', {'ds' : ds, 'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds)})
-	scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 'path_trials': path_trials,
-								'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
-								'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
+	
