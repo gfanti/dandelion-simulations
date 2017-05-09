@@ -170,9 +170,9 @@ class MaxWeightEstimator(object):
 
 		return precision, recall
 
-class MaxWeightVCEstimator(MaxWeightEstimator):
+class MaxWeightVerCheckEstimator(MaxWeightEstimator):
 	def __init__(self, G, honest_nodes, honest_dandelions, weights, verbose = False, p_and_r = False):
-		super(MaxWeightVCSimulator, self).__init__(G, honest_nodes, weights, verbose, p_and_r)
+		super(MaxWeightVerCheckSimulator, self).__init__(G, honest_nodes, weights, verbose, p_and_r)
 		self.honest_dandelions = honest_dandelions
 		
 	def compute_estimate(self):
@@ -298,8 +298,8 @@ class MaxWeightLineSimulator(LineSimulator):
 
 
 	def compute_likelihoods(self, exit):
-		p = float(self.num_honest_nodes) / self.G.number_of_nodes()
-		local_tree_depth = math.floor(1.5 / p)
+		n_tilde = float(self.num_honest_nodes) / self.G.number_of_nodes()
+		local_tree_depth = math.floor(1.5 / n_tilde)
 
 		spies = [node for node in self.G.nodes() if self.G.node[node]['spy']]
 
