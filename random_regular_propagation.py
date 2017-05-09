@@ -46,18 +46,18 @@ if __name__=='__main__':
 	# p = 0.2 # probability of spiesx
 	verbose = False	# debug?
 
-	graph_trials = 100
+	graph_trials = 1
 	# graph_trials = 150
 	# graph_trials = 40
 
 	# path_trials = 50
-	path_trials = 20
+	path_trials = 1
 
 	use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
 
 
-	d_means = []
-	d_stds = []
+	p_means, p_stds = [], []
+	r_means, r_stds = [], []
 
 	# ----- Out-degree of graph ----#
 	# ds = [1,2,3]
@@ -70,8 +70,9 @@ if __name__=='__main__':
 
 	for d in ds:
 		print 'd is ', d
-		p_means = []
-		p_stds = []
+		p_mean, p_std = [], []
+		r_mean, r_std = [], []
+
 
 		for p in ps:
 			print 'p is', p
@@ -149,15 +150,27 @@ if __name__=='__main__':
 			print 'Mean recall:' , mean_recall
 			print 'Std recall:' , std_recall
 			
-			p_means.append(mean_precision)
-			p_stds.append(std_precision)
+			p_mean.append(mean_precision)
+			p_std.append(std_precision)
+
+			r_mean.append(mean_recall)
+			r_std.append(std_recall)
 
 		
-		d_means += [p_means]
-		d_stds += [p_stds]
+		p_means.append(np.mean(p_mean))
+		p_stds.append(np.mean(p_std))
 
-	print 'Total d_means', np.array(d_means)
-	print 'Total d_stds', np.array(d_stds)
+		r_means.append(np.mean(r_mean))
+		r_stds.append(np.mean(r_std))
 
-	# scipy.io.savemat('results/d_reg_first_spy_approxk4.mat', {'ds' : ds, 'd_means' : np.array(d_means), 'd_stds' : np.array(d_stds)})
-	# scipy.io.savemat('results/d_reg_6_ml.mat', {'ds' : ds, 'd_means' : np.array(d_means), 'd_stds' : np.array(d_stds)})
+	print 'Total p_means', np.array(p_means)
+	print 'Total p_stds', np.array(p_stds)
+
+	print 'Total r_means', np.array(r_means)
+	print 'Total r_stds', np.array(r_stds)
+
+	filename = 'results/quasi_regular.mat'
+	# scipy.io.savemat('results/d_reg_first_spy_approxk4.mat', {'ds' : ds, 'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds)})
+	scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 'path_trials': path_trials,
+								'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
+								'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
