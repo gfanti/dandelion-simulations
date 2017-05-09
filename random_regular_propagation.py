@@ -66,13 +66,10 @@ if __name__=='__main__':
 	# ----- Fraction of spies ----#
 	# ps = [0.2]
 	# ps = np.arange(0.1,0.51,0.1)
-	ps = [0.2]
+	ps = [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5]
 
 	for d in ds:
 		print 'd is ', d
-		p_mean, p_std = [], []
-		r_mean, r_std = [], []
-
 
 		for p in ps:
 			print 'p is', p
@@ -150,26 +147,20 @@ if __name__=='__main__':
 			print 'Mean recall:' , mean_recall
 			print 'Std recall:' , std_recall
 			
-			p_mean.append(mean_precision)
-			p_std.append(std_precision)
+			p_means.append(mean_precision)
+			p_stds.append(std_precision)
 
-			r_mean.append(mean_recall)
-			r_std.append(std_recall)
+			r_means.append(mean_recall)
+			r_stds.append(std_recall)
 
 		
-		p_means.append(np.mean(p_mean))
-		p_stds.append(np.mean(p_std))
-
-		r_means.append(np.mean(r_mean))
-		r_stds.append(np.mean(r_std))
-
 	print 'Total p_means', np.array(p_means)
 	print 'Total p_stds', np.array(p_stds)
 
 	print 'Total r_means', np.array(r_means)
 	print 'Total r_stds', np.array(r_stds)
 
-	filename = 'results/quasi_regular.mat'
+	filename = 'results/quasi_regular_d_2_max_weight.mat'
 	# scipy.io.savemat('results/d_reg_first_spy_approxk4.mat', {'ds' : ds, 'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds)})
 	scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 'path_trials': path_trials,
 								'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
