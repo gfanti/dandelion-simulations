@@ -1,4 +1,7 @@
-# test how well we can generate a set of random line segments from a regular random graph
+''' 
+	This script tests Dandelion spreading on random regular graphs.
+	There are several variants, including quasi-regular constructions.
+'''
 
 import networkx as nx
 import random
@@ -9,8 +12,10 @@ import math
 import scipy.io
 from graph_lib import *
 import sim_lib
+import sys
 
-
+BTC_GRAPH_OUT_DEGREE = 8
+DIFFUSION = 2
 
 
 
@@ -41,19 +46,20 @@ def plot_graph(G):
 
 if __name__=='__main__':
 
-	n = 200	# number of nodes
+	n = 100	# number of nodes
 	# d = 2	 # outdegree of graph
 	# p = 0.2 # probability of spiesx
 	verbose = False	# debug?
 
-	graph_trials = 1
+	# graph_trials = 50
 	# graph_trials = 150
-	# graph_trials = 40
+	graph_trials = 70
+	# graph_trials = 10
 
-	# path_trials = 50
-	path_trials = 1
+	path_trials = 30
+	# path_trials = 10
 
-	use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
+	# use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
 
 
 	p_means, p_stds = [], []
@@ -61,108 +67,133 @@ if __name__=='__main__':
 
 	# ----- Out-degree of graph ----#
 	# ds = [1,2,3]
-	ds = [2]
+	# ds = [2]
+	ds = [1,2,3]
 
 	# ----- Fraction of spies ----#
 	# ps = [0.2]
 	# ps = np.arange(0.1,0.51,0.1)
 	ps = [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5]
+	# ps = [0.4, 0.5]
+
+	# ----- Number of choices for each connection -----#
+	# k = 4
+	# qs = [0.0, 0.1, 0.2]
+	if len(sys.argv) > 1:
+		q = float(sys.argv[1])
+	else:
+		q = 0.0
+	print 'q is', q
+
+	if len(sys.argv) > 2:
+		semi_honest = bool(sys.argv[2])
+	else:
+		semi_honest = False
+	print 'semi_honest:', semi_honest
 
 	for d in ds:
 		print 'd is ', d
 
+
 		for p in ps:
 			print 'p is', p
-			graph_precisions = []
-			graph_recalls = []
+
+			# Initialize precision and recall
+			graph_precision = 0
+			graph_recall = 0
+
 			for i in range(graph_trials):
-				if (i%10 == 0):
+				if (i%5 == 0):
 					print 'Trial ', i, ' of ', graph_trials
 
 				# Generate the graph
-				# gen = RegGraphGen(n, p, d, verbose)  # d-regular
-				gen = QuasiRegGraphGen(n, p, d, verbose) # quasi d-regular
+				gen = RegGraphGen(n, p, d, verbose)  # d-regular
+
+				# if semi_honest:
+				# 	gen = QuasiRegGraphGen(n, p, BTC_GRAPH_OUT_DEGREE, verbose, d_anon = 2) # quasi d-regular w spies
+				# else:
+				# 	gen = QuasiRegGraphGenSpiesOutbound(n, p, d, verbose) # quasi d-regular w spies, no degree-checking, spies connect to all
+
+				# gen = QuasiRegGraphGenSpies(n, p, k, d, verbose) # quasi d-regular with degree-checking, spies lie about degree
 				# gen = DataGraphGen('data/bitcoin.gexf', p, verbose) # Bitcoin graph
 				# gen = QuasiRegThreshGraphGen(n, p, d, k, verbose) # quasi d-regular
 				# gen = CompleteGraphGen(n, p, verbose)  # complete graph
-				if use_main:
-					G = gen.G
-				else:
-					G = gen.A
+				G = gen.G
+				A = gen.A
 				# print 'G loaded', nx.number_of_nodes(G), ' nodes' 
 				
 				num_honest_nodes = get_num_honest_nodes(G)
 
 				# Corner cases
 				if (num_honest_nodes == n) or (num_honest_nodes == 0):
-					if (num_honest_nodes == n):
-						graph_precision = 0.0
-					elif num_honest_nodes == 0:
-						graph_precision = 0.0
-					graph_precisions.append(graph_precision)
+					if (num_honest_nodes == n) or (num_honest_nodes == 0):
+						graph_precision += 0.0
+						graph_recall += 0.0
 					continue
 				# print G.edges()
-
-				# Initialize precision
-				graph_precision = 0
-				graph_recall = 0
-
 
 				for j in range(path_trials):
 
 					# run a simulation
-					# sim = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True)
+					sim = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True)
 					# sim = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
-					sim = sim_lib.MaxWeightLineSimulator(G, num_honest_nodes, verbose)
+					# if semi_honest:
 					
+					# ===== Uncomment this ===== #
+					# if q == DIFFUSION:
+					# 	sim = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
+					# else:
+					# 	sim = sim_lib.MaxWeightLineSimulatorUnknownTerminus(A, G, num_honest_nodes, verbose=verbose, q=q)
+					# ========================== #
+
+					# else:
+					# 	sim = sim_lib.MaxWeightLineSimulator(A, num_honest_nodes, verbose=verbose, q=q)
+
 					# retrieve the precision
 					graph_precision += sim.precision
 					graph_recall += sim.recall
 
-					# print 'precision', precision
+					# print 'precision', sim.precision
 
-				graph_precision = graph_precision / path_trials
-				graph_recall = graph_recall / path_trials
-				if verbose:
-					print 'Graph precision: ', graph_precision
-					print 'Graph recall: ', graph_recall
+				
 
-				graph_precisions.append(graph_precision)
-				graph_recalls.append(graph_recall)
+				# graph_precisions.append(graph_precision)
+				# graph_recalls.append(graph_recall)
 
 
 				if verbose:
 					# plot the graph
 					plot_graph(G)
 
+			graph_precision = graph_precision / path_trials / graph_trials
+			std_precision = np.sqrt(graph_precision * (1-graph_precision) / graph_trials / path_trials)
+			graph_recall = graph_recall / path_trials / graph_trials
+			std_recall = np.sqrt(graph_recall * (1-graph_recall) / graph_trials / path_trials)
+			print 'Graph precision: ', graph_precision
+			print 'Graph recall: ', graph_recall
 			
-			# print 'Final result: ', graph_precisions
-			mean_precision = np.mean(graph_precisions)
-			std_precision = np.sqrt(mean_precision * (1-mean_precision) / graph_trials / path_trials)
-			print 'Mean precision:' , mean_precision
-			print 'Std precision:' , std_precision
-
-			mean_recall = np.mean(graph_recalls)
-			std_recall = np.sqrt(mean_recall * (1-mean_recall) / graph_trials / path_trials)
-			print 'Mean recall:' , mean_recall
-			print 'Std recall:' , std_recall
-			
-			p_means.append(mean_precision)
+			p_means.append(graph_precision)
 			p_stds.append(std_precision)
 
-			r_means.append(mean_recall)
+			r_means.append(graph_recall)
 			r_stds.append(std_recall)
 
 	
-			filename = 'results/quasi_regular_d_2_max_weight.mat'
-			scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 'path_trials': path_trials,
-										'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
-										'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
+			if semi_honest:
+				filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_behave.mat'
+			else:	
+				filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_misbehave.mat'
+			# scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 
+			# 							'path_trials': path_trials, 'q': q,
+			# 							'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
+			# 							'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
 
 	print 'Total p_means', np.array(p_means)
 	print 'Total p_stds', np.array(p_stds)
 
 	print 'Total r_means', np.array(r_means)
 	print 'Total r_stds', np.array(r_stds)
+
+	# print 'saved to file', filename
 
 	
