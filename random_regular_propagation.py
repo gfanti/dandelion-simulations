@@ -62,18 +62,18 @@ if __name__=='__main__':
 	# use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
 
 
-	p_means, p_stds = [], []
-	r_means, r_stds = [], []
+	p_means, p_stds, p_means2 = [], [], []
+	r_means, r_stds, r_means2 = [], [], []
 
 	# ----- Out-degree of graph ----#
 	# ds = [1,2,3]
 	# ds = [2]
-	ds = [1,2,3]
+	ds = [2]
 
 	# ----- Fraction of spies ----#
 	# ps = [0.2]
 	# ps = np.arange(0.1,0.51,0.1)
-	ps = [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5]
+	ps = [0.01, 0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
 	# ps = [0.4, 0.5]
 
 	# ----- Number of choices for each connection -----#
@@ -93,15 +93,16 @@ if __name__=='__main__':
 
 	for d in ds:
 		print 'd is ', d
-
+		# Initialize precision and recall
+		graph_precision = 0
+		graph_recall = 0
 
 		for p in ps:
 			print 'p is', p
-
-			# Initialize precision and recall
 			graph_precision = 0
 			graph_recall = 0
-
+			graph_precision2 = 0
+			graph_recall2 = 0
 			for i in range(graph_trials):
 				if (i%5 == 0):
 					print 'Trial ', i, ' of ', graph_trials
@@ -135,8 +136,8 @@ if __name__=='__main__':
 				for j in range(path_trials):
 
 					# run a simulation
-					sim = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True)
-					# sim = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
+					sim1 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=False)
+					sim2 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=True)
 					# if semi_honest:
 					
 					# ===== Uncomment this ===== #
@@ -150,8 +151,10 @@ if __name__=='__main__':
 					# 	sim = sim_lib.MaxWeightLineSimulator(A, num_honest_nodes, verbose=verbose, q=q)
 
 					# retrieve the precision
-					graph_precision += sim.precision
-					graph_recall += sim.recall
+					graph_precision += sim1.precision
+					graph_recall += sim1.recall
+					graph_precision2 += sim2.precision
+					graph_recall2 += sim2.recall
 
 					# print 'precision', sim.precision
 
@@ -178,6 +181,17 @@ if __name__=='__main__':
 			r_means.append(graph_recall)
 			r_stds.append(std_recall)
 
+			graph_precision2 = graph_precision2 / path_trials / graph_trials
+			graph_recall2 = graph_recall2 / path_trials / graph_trials
+			# print 'Graph precision: ', graph_precision
+			# print 'Graph recall: ', graph_recall
+			
+			p_means2.append(graph_precision2)
+			# p_stds2.append(std_precision)
+
+			r_means2.append(graph_recall2)
+			# r_stds.append(std_recall)
+
 	
 			if semi_honest:
 				filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_behave.mat'
@@ -196,4 +210,17 @@ if __name__=='__main__':
 
 	# print 'saved to file', filename
 
-	
+	plt.plot(ps, np.log(p_means), '-o', label = 'Random forwarding')
+	plt.plot(ps, np.log(p_means2), '-o', label = 'Incoming edge based forwarding')
+	plt.plot(ps, np.log(ps), label='log p')
+	plt.plot(ps, np.log(np.square(ps)), label='log(p*p)')
+	plt.plot(ps, np.log(np.multiply(np.square(ps),np.log(np.divide(1.0,ps)))), label = 'log(p*p*log(1/p))')
+	plt.title('Incoming edge dependent First spy estimator with d=2 (Dandelion++)')
+	plt.ylabel('log(Precision)')
+	plt.xlabel('Fraction of spies')
+	plt.legend(loc = 0)
+	plt.savefig('plot.jpg')
+
+	# plt.plot(ps, r_means)
+	plt.show()
+	plt.close()	

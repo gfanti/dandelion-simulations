@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import collections
 import math
 
-
+incedge = False
 MAIN_GRAPH = 0
 ANON_GRAPH = 1
 
@@ -45,50 +45,104 @@ class LineSimulator(Simulator):
 		# List of all spies
 		spies = nx.get_node_attributes(self.A,'spy')
 		spy_mapping = {}
+		pred_succ_mapping = {}							#to store mappings predecessor ->node ->successor
+
 
 		if (graph == MAIN_GRAPH):
 			A = self.A
 
-		# Make a dict of spies
-		for node in self.A.nodes():
-			# if node is a spy, add it to the dictionary
-			if spies[node]:
-				spy_mapping[node] = []
-
-		# find the nodes reporting to each spy
-		for node in self.A.nodes():
-			if spies[node]:
-				continue	
-			spy_found = False
-			pre_tail = node
-			tail = node
-			path_length = 0
-			while True:
-				neighbors = self.A.successors(tail)
-				pre_tail = tail
-				tail = random.choice(neighbors)
-				path_length += 1
-				# print 'node', node, 'neighbors', neighbors, 'tail', tail
-				if spies[tail]:
-					spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
-					break
-				if np.random.binomial(1, self.q):
-					# end the stem
-					if tail in spy_mapping:
+		if incedge:										#variable that indicates if forwarding has to be pseudorandom based on incoming edge
+			for node in self.A.nodes():
+				# if node is a spy, add it to the dictionary
+				if spies[node]:
+					spy_mapping[node] = []
+				else:
+					pred_succ_mapping[node] = {}		#dict to hold mapping for this node
+					preds = self.A.predecessors(node)	
+					succs = self.A.successors(node)
+					for pred in preds:					#for each pred, we randomly allocate a succ
+						pred_succ_mapping[node][pred] = random.choice(succs)
+			# find the nodes reporting to each spy
+			for node in self.A.nodes():
+				if spies[node]:
+					continue	
+				spy_found = False
+				pre_tail = node
+				tail = node
+				path_length = 0
+				while True:
+					if path_length==0:					#each node sends out its own transaction randomly to one of its neighbours
+						neighbors = self.A.successors(tail)
+						now = random.choice(neighbors)
+					else:								#if the message is not originating here, stored mapping tells us the outgoing edge
+						now = pred_succ_mapping[tail][pre_tail]		
+					pre_tail = tail
+					tail = now
+					path_length += 1
+					# print 'node', node, 'neighbors', neighbors, 'tail', tail
+					if spies[tail]:
 						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
-					else:
-						spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
-					break
-				if path_length > nx.number_of_nodes(self.A):
-					# there are no spies on this path, so we'll just assign the 
-					#   last node to see the message to a spy
-					spy = random.choice(spy_mapping.keys())
-					spy_mapping[spy].append(SpyInfo(spy, tail, node))
-					break
-			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+						break
+					if np.random.binomial(1, self.q):
+						# end the stem
+						if tail in spy_mapping:
+							spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+						else:
+							spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
+						break
+					if path_length > nx.number_of_nodes(self.A):
+						# there are no spies on this path, so we'll just assign the 
+						#   last node to see the message to a spy
+						spy = random.choice(spy_mapping.keys())
+						spy_mapping[spy].append(SpyInfo(spy, tail, node))
+						break
+				if self.verbose:
+					print 'Node ', node, ' traversed ', path_length, 'hops'
 
-		return spy_mapping
+			return spy_mapping
+		else:											#if random forwarding is considered
+				# Make a dict of spies
+			for node in self.A.nodes():
+				# if node is a spy, add it to the dictionary
+				if spies[node]:
+					spy_mapping[node] = []
+
+			# find the nodes reporting to each spy
+			for node in self.A.nodes():
+				if spies[node]:
+					continue	
+				spy_found = False
+				pre_tail = node
+				tail = node
+				path_length = 0
+				while True:
+					neighbors = self.A.successors(tail)
+					pre_tail = tail
+					tail = random.choice(neighbors)
+					path_length += 1
+					# print 'node', node, 'neighbors', neighbors, 'tail', tail
+					if spies[tail]:
+						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+						break
+					if np.random.binomial(1, self.q):
+						# end the stem
+						if tail in spy_mapping:
+							spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+						else:
+							spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
+						break
+					if path_length > nx.number_of_nodes(self.A):
+						# there are no spies on this path, so we'll just assign the 
+						#   last node to see the message to a spy
+						spy = random.choice(spy_mapping.keys())
+						spy_mapping[spy].append(SpyInfo(spy, tail, node))
+						break
+				if self.verbose:
+					print 'Node ', node, ' traversed ', path_length, 'hops'
+
+			return spy_mapping
+			
+
 
 		
 
@@ -437,6 +491,7 @@ class FirstSpyEstimator(object):
 		self.num_honest_nodes = num_honest_nodes
 		self.verbose = verbose
 		self.p_and_r = p_and_r # whether to compute precision AND recall or just precision
+
 	
 	def compute_payout(self, spy_mapping):
 		precision = 0
@@ -480,10 +535,12 @@ class FirstSpyEstimator(object):
 
 
 class FirstSpyLineSimulator(LineSimulator):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False):
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=False):
 		super(FirstSpyLineSimulator, self).__init__(A, verbose)
 		self.p_and_r = p_and_r
 		self.num_honest_nodes = num_honest_nodes
+		global incedge
+		incedge=edgebased		#global variable holds the boolean for random forwarding or pseudorandom/random
 
 		spy_mapping = super(FirstSpyLineSimulator, self).run_simulation()
 		est = FirstSpyEstimator(self.A, self.num_honest_nodes, self.verbose, p_and_r)
@@ -491,6 +548,8 @@ class FirstSpyLineSimulator(LineSimulator):
 			self.precision, self.recall = est.compute_payout(spy_mapping)
 		else:
 			self.precision = est.compute_payout(spy_mapping)
+
+
 
 class FirstSpyLineSimulatorMultipleTx(LineSimulator):
 	def __init__(self, A, num_honest_nodes, verbose = False, num_tx = 1):
