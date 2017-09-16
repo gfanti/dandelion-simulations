@@ -62,8 +62,8 @@ if __name__=='__main__':
 	# use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
 
 
-	p_means, p_stds, p_means2 = [], [], []
-	r_means, r_stds, r_means2 = [], [], []
+	p_means, p_stds, p_means2, p_stds2, p_means3, p_stds3 = [], [], [], [], [], []
+	r_means, r_stds, r_means2 , r_stds2, r_means3, r_stds3= [], [], [], [], [], []
 
 	# ----- Out-degree of graph ----#
 	# ds = [1,2,3]
@@ -71,9 +71,9 @@ if __name__=='__main__':
 	ds = [2]
 
 	# ----- Fraction of spies ----#
-	# ps = [0.2]
+	# ps = [0.2, 0.7]
 	# ps = np.arange(0.1,0.51,0.1)
-	ps = [0.01, 0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
+	ps = [0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
 	# ps = [0.4, 0.5]
 
 	# ----- Number of choices for each connection -----#
@@ -103,6 +103,8 @@ if __name__=='__main__':
 			graph_recall = 0
 			graph_precision2 = 0
 			graph_recall2 = 0
+			graph_precision3 = 0
+			graph_recall3 = 0
 			for i in range(graph_trials):
 				if (i%5 == 0):
 					print 'Trial ', i, ' of ', graph_trials
@@ -136,8 +138,10 @@ if __name__=='__main__':
 				for j in range(path_trials):
 
 					# run a simulation
+					
 					sim1 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=False)
 					sim2 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=True)
+					sim3 = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
 					# if semi_honest:
 					
 					# ===== Uncomment this ===== #
@@ -155,7 +159,8 @@ if __name__=='__main__':
 					graph_recall += sim1.recall
 					graph_precision2 += sim2.precision
 					graph_recall2 += sim2.recall
-
+					graph_precision3 += sim3.precision
+					graph_recall3 += sim3.recall
 					# print 'precision', sim.precision
 
 				
@@ -169,7 +174,7 @@ if __name__=='__main__':
 					plot_graph(G)
 
 			graph_precision = graph_precision / path_trials / graph_trials
-			std_precision = np.sqrt(graph_precision * (1-graph_precision) / graph_trials / path_trials)
+			std_precision = np.sqrt(graph_precision * (1.0-graph_precision) / graph_trials / path_trials)
 			graph_recall = graph_recall / path_trials / graph_trials
 			std_recall = np.sqrt(graph_recall * (1-graph_recall) / graph_trials / path_trials)
 			print 'Graph precision: ', graph_precision
@@ -182,44 +187,69 @@ if __name__=='__main__':
 			r_stds.append(std_recall)
 
 			graph_precision2 = graph_precision2 / path_trials / graph_trials
+			std_precision2 = np.sqrt(graph_precision2 * (1.0-graph_precision2) / graph_trials / path_trials)
+
 			graph_recall2 = graph_recall2 / path_trials / graph_trials
 			# print 'Graph precision: ', graph_precision
 			# print 'Graph recall: ', graph_recall
 			
 			p_means2.append(graph_precision2)
-			# p_stds2.append(std_precision)
+			p_stds2.append(std_precision2)
 
 			r_means2.append(graph_recall2)
 			# r_stds.append(std_recall)
 
+			graph_precision3 = graph_precision3 / path_trials / graph_trials
+			std_precision3 = np.sqrt(graph_precision3 * (1-graph_precision3) / graph_trials / path_trials)
+
+			graph_recall3 = graph_recall3 / path_trials / graph_trials
+			# print 'Graph precision: ', graph_precision
+			# print 'Graph recall: ', graph_recall
+			
+			p_means3.append(graph_precision3)
+			p_stds3.append(std_precision3)
+
+			r_means3.append(graph_recall3)
+			
+
+
 	
-			if semi_honest:
-				filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_behave.mat'
-			else:	
-				filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_misbehave.mat'
-			# scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 
-			# 							'path_trials': path_trials, 'q': q,
-			# 							'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
-			# 							'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
+			# if semi_honest:
+			# 	filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_behave.mat'
+			# else:	
+			# 	filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_misbehave.mat'
+			# # scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 
+			# # 							'path_trials': path_trials, 'q': q,
+			# # 							'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
+			# # 							'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
 
 	print 'Total p_means', np.array(p_means)
 	print 'Total p_stds', np.array(p_stds)
 
-	print 'Total r_means', np.array(r_means)
-	print 'Total r_stds', np.array(r_stds)
+	# print 'Total r_means', np.array(r_means)
+	# print 'Total r_stds', np.array(r_stds)
 
 	# print 'saved to file', filename
-
-	plt.plot(ps, np.log(p_means), '-o', label = 'Random forwarding')
-	plt.plot(ps, np.log(p_means2), '-o', label = 'Incoming edge based forwarding')
-	plt.plot(ps, np.log(ps), label='log p')
-	plt.plot(ps, np.log(np.square(ps)), label='log(p*p)')
-	plt.plot(ps, np.log(np.multiply(np.square(ps),np.log(np.divide(1.0,ps)))), label = 'log(p*p*log(1/p))')
-	plt.title('Incoming edge dependent First spy estimator with d=2 (Dandelion++)')
+	print(np.log(p_stds))
+	print('...........')
+	print(np.log(p_means))
+	plt.figure()
+	plt.yscale('log')
+	plt.errorbar(ps, p_means, yerr = [p_stds,p_stds],fmt = '-x' ,  label = 'Per-transaction forwarding')
+	plt.errorbar(ps, p_means2, yerr = [p_stds2,p_stds2], fmt = '-o', label = 'Per-incoming-edge forwarding')
+	plt.errorbar(ps, p_means3, yerr = [p_stds3, p_stds3], fmt = '-^', label = 'Diffusion')
+	# plt.plot(ps, np.log(p_means),  '-o', label = 'Random forwarding')
+	# plt.plot(ps, np.log(p_means2), '-o', label = 'Incoming edge based forwarding')
+	# plt.plot(ps, np.log(p_means3), '-o', label = 'Diffusion')
+	# plt.errorbar(ps, np.log(ps), yerr = 1)
+	plt.plot(ps,ps, label='p')
+	# plt.plot(ps, np.log(np.square(ps)), label='log(p*p)')
+	# plt.plot(ps, np.log(np.multiply(np.square(ps),np.log(np.divide(1.0,ps)))), label = 'log(p*p*log(1/p))')
+	plt.title('First spy precision on 4-regular graph (Dandelion++)')
 	plt.ylabel('log(Precision)')
-	plt.xlabel('Fraction of spies')
+	plt.xlabel('Fraction of spies, p')
 	plt.legend(loc = 0)
-	plt.savefig('plot.jpg')
+	plt.savefig('plot4.jpg')
 
 	# plt.plot(ps, r_means)
 	plt.show()
