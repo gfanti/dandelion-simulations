@@ -208,6 +208,10 @@ if __name__=='__main__':
 	print 'Total r_means', np.array(r_means)
 	print 'Total r_stds', np.array(r_stds)
 
+	print 'Values of p', np.array(ps)
+
+	print 'Total p_means from edge forwarding', np.array(p_means2)
+
 	# print 'saved to file', filename
 
 	plt.plot(ps, np.log(p_means), '-o', label = 'Random forwarding')

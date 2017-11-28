@@ -60,8 +60,12 @@ class LineSimulator(Simulator):
 					pred_succ_mapping[node] = {}		#dict to hold mapping for this node
 					preds = self.A.predecessors(node)	
 					succs = self.A.successors(node)
+					succs_set = set()
 					for pred in preds:					#for each pred, we randomly allocate a succ
-						pred_succ_mapping[node][pred] = random.choice(succs)
+						succ = random.choice(succs)
+						pred_succ_mapping[node][pred] = succ
+						succs_set.add(succ)
+					pred_succ_mapping[node][node] = random.sample(succs_set,1)[0]
 			# find the nodes reporting to each spy
 			for node in self.A.nodes():
 				if spies[node]:
@@ -71,11 +75,12 @@ class LineSimulator(Simulator):
 				tail = node
 				path_length = 0
 				while True:
-					if path_length==0:					#each node sends out its own transaction randomly to one of its neighbours
-						neighbors = self.A.successors(tail)
-						now = random.choice(neighbors)
-					else:								#if the message is not originating here, stored mapping tells us the outgoing edge
-						now = pred_succ_mapping[tail][pre_tail]		
+					# if path_length==0:					#each node sends out its own transaction randomly to one of its neighbours
+					# 	neighbors = self.A.successors(tail)
+					# 	now = random.choice(neighbors)
+					# else:								#if the message is not originating here, stored mapping tells us the outgoing edge
+					# 	now = pred_succ_mapping[tail][pre_tail]		
+					now = pred_succ_mapping[tail][pre_tail]
 					pre_tail = tail
 					tail = now
 					path_length += 1
