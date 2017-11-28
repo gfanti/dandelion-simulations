@@ -46,110 +46,180 @@ class LineSimulator(Simulator):
 		spies = nx.get_node_attributes(self.A,'spy')
 		spy_mapping = {}
 		pred_succ_mapping = {}							#to store mappings predecessor ->node ->successor
-
-
 		if (graph == MAIN_GRAPH):
 			A = self.A
-
-		if incedge:										#variable that indicates if forwarding has to be pseudorandom based on incoming edge
-			for node in self.A.nodes():
-				# if node is a spy, add it to the dictionary
-				if spies[node]:
-					spy_mapping[node] = []
+		 
+		for node in self.A.nodes():
+			# if node is a spy, add it to the dictionary
+			if spies[node]:
+				spy_mapping[node] = []
+			elif incedge==2:
+				succs = self.A.successors(node)
+				pred_succ_mapping[node] = random.choice(succs)
+			elif incedge==1:
+				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
+				preds = self.A.predecessors(node)	
+				succs = self.A.successors(node)
+				for pred in preds:					#for each pred, we randomly allocate a succ
+					pred_succ_mapping[node][pred] = random.choice(succs)
+				if len(pred_succ_mapping[node].values())>1:				
+					if (pred_succ_mapping[node].values())[0]==(pred_succ_mapping[node].values())[1]:
+						pred_succ_mapping[node][node] = (pred_succ_mapping[node].values())[0]
+					else:
+						pred_succ_mapping[node][node] = random.choice(succs)
+				else:		
+					pred_succ_mapping[node][node] = pred_succ_mapping[node].values()[0]			
+			elif incedge==3:
+				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
+				preds = self.A.predecessors(node)	
+				succs = self.A.successors(node)
+				pred_succ_mapping[node][preds[0]] = random.choice(succs)
+				if len(preds)>1 and len(succs)>1:	
+						succs = np.array(succs)				
+						pred_succ_mapping[node][preds[1]] = succs[np.where(succs!=pred_succ_mapping[node][preds[0]])[0][0]]
+						pred_succ_mapping[node][node] = random.choice(succs)
 				else:
-					pred_succ_mapping[node] = {}		#dict to hold mapping for this node
-					preds = self.A.predecessors(node)	
-					succs = self.A.successors(node)
-					succs_set = set()
-					for pred in preds:					#for each pred, we randomly allocate a succ
-						succ = random.choice(succs)
-						pred_succ_mapping[node][pred] = succ
-						succs_set.add(succ)
-					pred_succ_mapping[node][node] = random.sample(succs_set,1)[0]
-			# find the nodes reporting to each spy
-			for node in self.A.nodes():
-				if spies[node]:
-					continue	
-				spy_found = False
-				pre_tail = node
-				tail = node
-				path_length = 0
-				while True:
-					# if path_length==0:					#each node sends out its own transaction randomly to one of its neighbours
-					# 	neighbors = self.A.successors(tail)
-					# 	now = random.choice(neighbors)
-					# else:								#if the message is not originating here, stored mapping tells us the outgoing edge
-					# 	now = pred_succ_mapping[tail][pre_tail]		
-					now = pred_succ_mapping[tail][pre_tail]
-					pre_tail = tail
-					tail = now
-					path_length += 1
-					# print 'node', node, 'neighbors', neighbors, 'tail', tail
-					if spies[tail]:
-						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
-						break
-					if np.random.binomial(1, self.q):
-						# end the stem
-						if tail in spy_mapping:
-							spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+					if(len(preds)>1):
+						pred_succ_mapping[node][preds[1]] = pred_succ_mapping[node][preds[0]]				
+					pred_succ_mapping[node][node] = pred_succ_mapping[node][preds[0]]
+			elif incedge == 4:
+				pred_succ_mapping[node] = {}
+				preds = self.A.predecessors(node)	
+				succs = self.A.successors(node)
+				for pred in preds:
+					pred_succ_mapping[node][pred] = random.choice(succs)
+				pred_succ_mapping[node][node] = random.choice(succs)
+
+		# find the nodes reporting to each spy
+		hops = np.zeros(2*len(self.A.nodes()))
+		for node in self.A.nodes():
+			# print("starting node ", node)
+			if spies[node]:
+				continue	
+			spy_found = False
+			pre_tail = node
+			tail = node
+			path_length = 0
+			path_list = []
+			# print("\n")
+			while True:
+				if tail in path_list and incedge!=0:
+					neighbors = np.array(self.A.successors(tail))
+					if (incedge==1 or incedge==3 or incedge==4):
+						if (len(neighbors)>1):
+							now = neighbors[np.where(neighbors!=pred_succ_mapping[tail][pre_tail])[0][0]]
 						else:
-							spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
-						break
-					if path_length > nx.number_of_nodes(self.A):
-						# there are no spies on this path, so we'll just assign the 
-						#   last node to see the message to a spy
-						spy = random.choice(spy_mapping.keys())
-						spy_mapping[spy].append(SpyInfo(spy, tail, node))
-						break
-				if self.verbose:
-					print 'Node ', node, ' traversed ', path_length, 'hops'
-
-			return spy_mapping
-		else:											#if random forwarding is considered
-				# Make a dict of spies
-			for node in self.A.nodes():
-				# if node is a spy, add it to the dictionary
-				if spies[node]:
-					spy_mapping[node] = []
-
-			# find the nodes reporting to each spy
-			for node in self.A.nodes():
-				if spies[node]:
-					continue	
-				spy_found = False
-				pre_tail = node
-				tail = node
-				path_length = 0
-				while True:
+							now = pred_succ_mapping[tail][pre_tail]	
+					else :
+						if (len(neighbors)>1):
+							now = neighbors[np.where(neighbors!=pred_succ_mapping[tail])[0][0]]
+						else:
+							now = pred_succ_mapping[tail]		
+				elif incedge==1 or incedge==3 or incedge==4:
+					now = pred_succ_mapping[tail][pre_tail]		
+				elif incedge==2:
+					now = pred_succ_mapping[tail]
+				elif incedge==0:
 					neighbors = self.A.successors(tail)
-					pre_tail = tail
-					tail = random.choice(neighbors)
-					path_length += 1
-					# print 'node', node, 'neighbors', neighbors, 'tail', tail
-					if spies[tail]:
+					now = random.choice(neighbors)
+				pre_tail = tail
+				path_list.append(tail)
+				tail = now
+				path_length += 1
+				if spies[tail]:
+					spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+					break
+				if np.random.binomial(1, self.q):
+					# end the stem
+					if tail in spy_mapping:
 						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
-						break
-					if np.random.binomial(1, self.q):
-						# end the stem
-						if tail in spy_mapping:
-							spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
-						else:
-							spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
-						break
-					if path_length > nx.number_of_nodes(self.A):
-						# there are no spies on this path, so we'll just assign the 
-						#   last node to see the message to a spy
-						spy = random.choice(spy_mapping.keys())
-						spy_mapping[spy].append(SpyInfo(spy, tail, node))
-						break
-				if self.verbose:
-					print 'Node ', node, ' traversed ', path_length, 'hops'
+					else:
+						spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
+					break
+				if path_length > nx.number_of_nodes(self.A):
+				# if tail in 
+					# there are no spies on this path, so we'll just assign the 
+					#   last node to see the message to a spy
+					spy = random.choice(spy_mapping.keys())
+					spy_mapping[spy].append(SpyInfo(spy, tail, node))
+					break
+			if self.verbose:
+				print 'Node ', node, ' traversed ', path_length, 'hops'
+			hops[path_length] +=1
 
-			return spy_mapping
+		return spy_mapping, hops
+
 			
-
-
 		
+
+
+
+class FirstSpyLineSimulator(LineSimulator):
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0):
+		super(FirstSpyLineSimulator, self).__init__(A, verbose)
+		self.p_and_r = p_and_r
+		self.num_honest_nodes = num_honest_nodes
+		global incedge
+		incedge=edgebased		#global variable holds the type for random forwarding or pseudorandom/random
+
+		spy_mapping, hops = super(FirstSpyLineSimulator, self).run_simulation()
+		self.hops = hops
+		est = FirstSpyEstimator(self.A, self.num_honest_nodes, self.verbose, p_and_r)
+		if p_and_r:
+			self.precision, self.recall, self.wards = est.compute_payout(spy_mapping)
+		else:
+			self.precision = est.compute_payout(spy_mapping)
+
+
+class FirstSpyEstimator(object):
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False):
+		self.A = A
+		self.num_honest_nodes = num_honest_nodes
+		self.verbose = verbose
+		self.p_and_r = p_and_r # whether to compute precision AND recall or just precision
+
+	
+	def compute_payout(self, spy_mapping):
+		precision = 0
+		recall = 0
+		if self.verbose:
+			print '\n'
+
+		exits = {}
+		for spy, info in spy_mapping.iteritems():
+			if self.verbose:
+				print 'spy', spy
+				exit_list = [item.exit_node for item in info]
+				sources = [item.source for item in info]
+				for exit in set(exit_list):
+					print 'exit', exit
+					print 'sources', [sources[i] for i in range(len(exit_list)) if exit_list[i] == exit]
+			
+			for item in info:
+				# if verbose:
+				# 	print 'exit node', item.exit_node
+				# 	print 'source', item.source
+				if item.exit_node not in exits:
+					exits[item.exit_node] = [item.source]
+				else:
+					exits[item.exit_node].append(item.source)
+		nodes_wards = np.zeros(int(2*len(self.A.nodes()))) 
+		for exit, ward in exits.iteritems():
+			nodes_wards[len(ward)] +=1
+			if exit in ward:
+				precision += 1.0 / len(ward)
+				recall += 1.0
+		if self.verbose:
+			print 'num_honest_nodes', self.num_honest_nodes
+			print 'total precision', precision
+		precision = precision / self.num_honest_nodes
+		recall = recall / self.num_honest_nodes
+		
+		if self.p_and_r:
+			return precision, recall, nodes_wards
+		else:
+			return precision
+
 
 class MaxWeightEstimator(object):
 	def __init__(self, A, honest_nodes, weights, verbose = False, p_and_r = False):
@@ -238,6 +308,9 @@ class MaxWeightEstimator(object):
 		recall = precision # because max weight outputs a matching, which has same precision and recall
 
 		return precision, recall
+
+
+
 
 class MaxWeightVerCheckEstimator(MaxWeightEstimator):
 	def __init__(self, A, honest_nodes, honest_dandelions, weights, verbose = False, p_and_r = False):
@@ -339,7 +412,6 @@ class MaxWeightLineSimulator(LineSimulator):
 		'''
 		precision = 0
 		recall = 0
-
 		exits = {}
 		self.weights = {}
 		
@@ -439,7 +511,6 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 		# List of all spies
 		spies = nx.get_node_attributes(self.A,'spy')
 		spy_mapping = {}
-
 		# Make a dict of spies
 		for node in self.A.nodes():
 			# if node is a spy, add it to the dictionary
@@ -465,15 +536,12 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 					break
 				if np.random.binomial(1, self.q):
 					# end the stem
-
 					# now simulate diffusion starting from tail, and use the first-spy est
 					# 	to guess who was the source of the diffusion process
 					sim2 = FirstSpyDiffusionSimulatorOneSource(self.G, self.num_honest_nodes, tail,
 															   verbose=self.verbose)
 					tail = sim2.est_src
-
 					# print 'tail1', tail, 'tail2', tail2
-
 					if tail in spy_mapping:
 						spy_mapping[tail].append(SpyInfo(tail, tail, node, relayed_to_spy = False))
 					else:
@@ -490,69 +558,6 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 
 		return spy_mapping
 
-class FirstSpyEstimator(object):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False):
-		self.A = A
-		self.num_honest_nodes = num_honest_nodes
-		self.verbose = verbose
-		self.p_and_r = p_and_r # whether to compute precision AND recall or just precision
-
-	
-	def compute_payout(self, spy_mapping):
-		precision = 0
-		recall = 0
-		if self.verbose:
-			print '\n'
-
-		exits = {}
-		for spy, info in spy_mapping.iteritems():
-			if self.verbose:
-				print 'spy', spy
-				exit_list = [item.exit_node for item in info]
-				sources = [item.source for item in info]
-				for exit in set(exit_list):
-					print 'exit', exit
-					print 'sources', [sources[i] for i in range(len(exit_list)) if exit_list[i] == exit]
-			
-			for item in info:
-				# if verbose:
-				# 	print 'exit node', item.exit_node
-				# 	print 'source', item.source
-				if item.exit_node not in exits:
-					exits[item.exit_node] = [item.source]
-				else:
-					exits[item.exit_node].append(item.source)
-
-		for exit, ward in exits.iteritems():
-			if exit in ward:
-				precision += 1.0 / len(ward)
-				recall += 1.0
-		if self.verbose:
-			print 'num_honest_nodes', self.num_honest_nodes
-			print 'total precision', precision
-		precision = precision / self.num_honest_nodes
-		recall = recall / self.num_honest_nodes
-		
-		if self.p_and_r:
-			return precision, recall
-		else:
-			return precision
-
-
-class FirstSpyLineSimulator(LineSimulator):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=False):
-		super(FirstSpyLineSimulator, self).__init__(A, verbose)
-		self.p_and_r = p_and_r
-		self.num_honest_nodes = num_honest_nodes
-		global incedge
-		incedge=edgebased		#global variable holds the boolean for random forwarding or pseudorandom/random
-
-		spy_mapping = super(FirstSpyLineSimulator, self).run_simulation()
-		est = FirstSpyEstimator(self.A, self.num_honest_nodes, self.verbose, p_and_r)
-		if p_and_r:
-			self.precision, self.recall = est.compute_payout(spy_mapping)
-		else:
-			self.precision = est.compute_payout(spy_mapping)
 
 
 
@@ -609,14 +614,15 @@ class DiffusionSimulator(Simulator):
 		spies = nx.get_node_attributes(self.A,'spy')
 
 		spy_mapping = {}
-
+		honest = 0
 		# Make a dict of spies
 		for node in self.A.nodes():
 			# if node is a spy, add it to the dictionary
 			if spies[node]:
 				spy_mapping[node] = []
-
+		hops = np.zeros(int(2*len(self.A.nodes())))
 		# find the nodes reporting to each spy
+		mean_pathlength = 0
 		for node in self.A.nodes():
 			if spies[node]:
 				continue	
@@ -631,6 +637,7 @@ class DiffusionSimulator(Simulator):
 				source = next[0]
 				target = next[1]
 				path_length += 1
+				mean_pathlength+=1
 				# print 'node', node, 'neighbors', neighbors, 'tail', tail
 				if spies[target]:
 					spy_mapping[target].append(SpyInfo(target, source, node))
@@ -650,8 +657,9 @@ class DiffusionSimulator(Simulator):
 				# add next to boundary, remove the infecting node if it is eclipsed
 			if self.verbose:
 				print 'Node ', node, ' traversed ', path_length, 'hops'
+			hops[path_length] +=1
 
-		return spy_mapping
+		return spy_mapping, hops
 
 	def get_neighbor_set(self, candidates, infected):
 		''' Returns the set of susceptible edges from infected zone to uninfected '''
@@ -668,10 +676,11 @@ class FirstSpyDiffusionSimulator(DiffusionSimulator):
 		super(FirstSpyDiffusionSimulator, self).__init__(A, num_honest_nodes, verbose)
 		self.p_and_r = p_and_r
 
-		spy_mapping = super(FirstSpyDiffusionSimulator, self).run_simulation()
+		spy_mapping, hops = super(FirstSpyDiffusionSimulator, self).run_simulation()
+		self.hops = hops
 		est = FirstSpyEstimator(A, num_honest_nodes, verbose, p_and_r)
 		if p_and_r:
-			self.precision, self.recall = est.compute_payout(spy_mapping)
+			self.precision, self.recall, self.wards = est.compute_payout(spy_mapping)
 		else:
 			self.precision = est.compute_payout(spy_mapping)
 
