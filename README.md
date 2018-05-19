@@ -7,7 +7,23 @@ config_random_regular.py, and then run:
 
 `python random_regular_propagation.py`
 
-The appropriate parameter configurations for the different figures are listed below. 
+The appropriate parameter configurations for the different figures are listed below. Unless stated otherwise, the listed code should be pasted into the appropriate part of config_random_regular.py. (this should be clear from context)
+
+#### Figure 3: Average precision as a function of p for random, directed, d-regular graphs
+
+```
+ds = [1,2,3]
+
+# graph type
+sim_graph = graph_lib.RegGraphGen
+sim_graph_params = {}
+
+# simulation settings
+sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator, 
+										   {'p_and_r':True, 'edgebased':0})
+sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
+
+```
 
 #### Figure 5: Recall vs # of transactions per node in random 4-regular graphs
 
@@ -15,9 +31,10 @@ The appropriate parameter configurations for the different figures are listed be
 
 #### Figure 6: First-spy precision for 4-regular graphs for various routing schemes.
 
-In config_random_regular.py: 
 
 ```
+ds = [2] 
+
 # graph type
 sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
@@ -42,6 +59,8 @@ You will have to run the code twice, with difference parameter settings.
 quasi-4-regular:
 
 ```
+ds = [2]
+
 # graph type
 sim_graph = graph_lib.QuasiRegGraphGen
 sim_graph_params = {'d_anon':2}
@@ -57,6 +76,8 @@ sim_settings['max_weight_dand'] =
 exact 4-regular:
 
 ```
+ds = [2]
+
 # graph type
 sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
