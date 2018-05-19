@@ -3,6 +3,8 @@
 	There are several variants, including quasi-regular constructions.
 '''
 
+from config_random_regular import *
+
 import networkx as nx
 import random
 import numpy as np
@@ -10,12 +12,8 @@ import matplotlib.pyplot as plt
 import collections
 import math
 import scipy.io
-from graph_lib import *
-import sim_lib
 import sys
 
-BTC_GRAPH_OUT_DEGREE = 8
-DIFFUSION = 2
 
 
 
@@ -42,43 +40,33 @@ def plot_graph(G):
 	nx.draw_networkx_labels(G, pos, labels, font_size = 16)
 	plt.show()
 
+def run_sims(G, num_nodes, verbose, sim_type, sim_params):
+	''' Run simulation according to the settings specified in sim_settings'''
+	return sim_type(G, num_honest_nodes, verbose, **sim_params)
+
+def generate_graph(n, p, d, verbose, graph_type, graph_params):
+	''' Generate a graph with corresponding params
+		Input params:
+			n     	  number of nodes
+			p     	  fraction of spies
+			d 	  	  out-degree of random-regular anonymity graph
+			verbose   print extra debug messages
+			args  	  other args for different classes of graphs, including the type of graph'''
+	return graph_type(n, p, d, verbose, **graph_params)
 
 
 if __name__=='__main__':
 
-	n = 100	# number of nodes
-	# d = 2	 # outdegree of graph
-	# p = 0.2 # probability of spiesx
-	verbose = False	# debug?
 
-	# graph_trials = 50
-	# graph_trials = 150
-	graph_trials = 70
-	# graph_trials = 10
-
-	path_trials = 30
-	# path_trials = 10
-
-	# use_main = True		# Use the main P2P graph (true) or the anonymity graph (false)
-
-
-	p_means, p_stds, p_means2, p_stds2, p_means3, p_stds3 = [], [], [], [], [], []
-	r_means, r_stds, r_means2 , r_stds2, r_means3, r_stds3= [], [], [], [], [], []
-
-	# ----- Out-degree of graph ----#
-	# ds = [1,2,3]
-	# ds = [2]
-	ds = [2]
-
-	# ----- Fraction of spies ----#
-	# ps = [0.2, 0.7]
-	# ps = np.arange(0.1,0.51,0.1)
-	ps = [0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
-	# ps = [0.4, 0.5]
-
+	num_sims = len(sim_settings)
+	
+	# Initialize precision, recall lists
+	p_means = [[] for i in range(num_sims)]
+	p_stds  = [[] for i in range(num_sims)]
+	r_means = [[] for i in range(num_sims)]
+	r_stds  = [[] for i in range(num_sims)]
+	
 	# ----- Number of choices for each connection -----#
-	# k = 4
-	# qs = [0.0, 0.1, 0.2]
 	if len(sys.argv) > 1:
 		q = float(sys.argv[1])
 	else:
@@ -93,24 +81,23 @@ if __name__=='__main__':
 
 	for d in ds:
 		print 'd is ', d
-		# Initialize precision and recall
-		graph_precision = 0
-		graph_recall = 0
 
 		for p in ps:
 			print 'p is', p
-			graph_precision = 0
-			graph_recall = 0
-			graph_precision2 = 0
-			graph_recall2 = 0
-			graph_precision3 = 0
-			graph_recall3 = 0
+
+			# Collect the precision and recall per graph per trial here
+			graph_precision = [0 for i in range(num_sims)]
+			graph_recall = [0 for i in range(num_sims)]
+			graph_precision_std = [0 for i in range(num_sims)]
+			graph_recall_std = [0 for i in range(num_sims)]
+			
 			for i in range(graph_trials):
 				if (i%5 == 0):
 					print 'Trial ', i, ' of ', graph_trials
 
 				# Generate the graph
-				gen = RegGraphGen(n, p, d, verbose)  # d-regular
+				# gen = sim_graph[1](n, p, d, verbose)  # d-regular graph
+				gen = generate_graph(n, p, d, verbose, sim_graph, sim_graph_params)
 
 				# if semi_honest:
 				# 	gen = QuasiRegGraphGen(n, p, BTC_GRAPH_OUT_DEGREE, verbose, d_anon = 2) # quasi d-regular w spies
@@ -136,125 +123,59 @@ if __name__=='__main__':
 				# print G.edges()
 
 				for j in range(path_trials):
-
-					# run a simulation
-					
-					sim1 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=False)
-					sim2 = sim_lib.FirstSpyLineSimulator(G, num_honest_nodes, verbose, p_and_r = True, edgebased=True)
-					sim3 = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
-					# if semi_honest:
-					
-					# ===== Uncomment this ===== #
-					# if q == DIFFUSION:
-					# 	sim = sim_lib.FirstSpyDiffusionSimulator(G, num_honest_nodes, verbose)
-					# else:
-					# 	sim = sim_lib.MaxWeightLineSimulatorUnknownTerminus(A, G, num_honest_nodes, verbose=verbose, q=q)
-					# ========================== #
-
-					# else:
-					# 	sim = sim_lib.MaxWeightLineSimulator(A, num_honest_nodes, verbose=verbose, q=q)
-
-					# retrieve the precision
-					graph_precision += sim1.precision
-					graph_recall += sim1.recall
-					graph_precision2 += sim2.precision
-					graph_recall2 += sim2.recall
-					graph_precision3 += sim3.precision
-					graph_recall3 += sim3.recall
-					# print 'precision', sim.precision
+					# run the simulations
+					sims = []
+					for sim_name, parameters in sim_settings.iteritems():
+						sims.append(run_sims(G, num_honest_nodes, verbose, parameters[0], 
+											 parameters[1]))
+						
+					for idx, sim in enumerate(sims):
+						graph_precision[idx] += sim.precision
+						graph_recall[idx] += sim.recall
 
 				
-
-				# graph_precisions.append(graph_precision)
-				# graph_recalls.append(graph_recall)
-
 
 				if verbose:
 					# plot the graph
 					plot_graph(G)
 
-			graph_precision = graph_precision / path_trials / graph_trials
-			std_precision = np.sqrt(graph_precision * (1.0-graph_precision) / graph_trials / path_trials)
-			graph_recall = graph_recall / path_trials / graph_trials
-			std_recall = np.sqrt(graph_recall * (1-graph_recall) / graph_trials / path_trials)
-			print 'Graph precision: ', graph_precision
-			print 'Graph recall: ', graph_recall
+			for idx, sim in enumerate(sims):
+
+				graph_precision[idx] = graph_precision[idx] / path_trials / graph_trials
+				graph_precision_std[idx] = np.sqrt(graph_precision[idx] * (1.0-graph_precision[idx]) / graph_trials / path_trials)
+				graph_recall[idx] = graph_recall[idx] / path_trials / graph_trials
+				graph_recall_std[idx] = np.sqrt(graph_recall[idx] * (1-graph_recall[idx]) / graph_trials / path_trials)
+				print 'Graph precision: ', graph_precision[idx]
+				print 'Graph recall: ', graph_recall[idx]
+				
+				p_means[idx].append(graph_precision[idx])
+				p_stds[idx].append(graph_precision_std[idx])
+
+				r_means[idx].append(graph_recall[idx])
+				r_stds[idx].append(graph_recall_std[idx])
+
 			
-			p_means.append(graph_precision)
-			p_stds.append(std_precision)
-
-			r_means.append(graph_recall)
-			r_stds.append(std_recall)
-
-			graph_precision2 = graph_precision2 / path_trials / graph_trials
-			std_precision2 = np.sqrt(graph_precision2 * (1.0-graph_precision2) / graph_trials / path_trials)
-
-			graph_recall2 = graph_recall2 / path_trials / graph_trials
-			# print 'Graph precision: ', graph_precision
-			# print 'Graph recall: ', graph_recall
-			
-			p_means2.append(graph_precision2)
-			p_stds2.append(std_precision2)
-
-			r_means2.append(graph_recall2)
-			# r_stds.append(std_recall)
-
-			graph_precision3 = graph_precision3 / path_trials / graph_trials
-			std_precision3 = np.sqrt(graph_precision3 * (1-graph_precision3) / graph_trials / path_trials)
-
-			graph_recall3 = graph_recall3 / path_trials / graph_trials
-			# print 'Graph precision: ', graph_precision
-			# print 'Graph recall: ', graph_recall
-			
-			p_means3.append(graph_precision3)
-			p_stds3.append(std_precision3)
-
-			r_means3.append(graph_recall3)
-			
-
-
-	
-			# if semi_honest:
-			# 	filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_behave.mat'
-			# else:	
-			# 	filename = 'results/spy_out_degree/quasi_regular_d_2_max_weight_q_' + str(q).replace('.','_') + '_spies_misbehave.mat'
-			# # scipy.io.savemat(filename, {'ds' : np.array(ds), 'ps': np.array(ps), 'n' : n, 'graph_trials': graph_trials, 
-			# # 							'path_trials': path_trials, 'q': q,
-			# # 							'p_means' : np.array(p_means), 'p_stds' : np.array(p_stds),
-			# # 							'r_means': np.array(r_means), 'r_stds' : np.array(r_stds)})
 
 	print 'Total p_means', np.array(p_means)
-	print 'Total p_stds', np.array(p_stds)
+	# print 'Total p_stds', np.array(p_stds)
 
-	# print 'Total r_means', np.array(r_means)
+	print 'Total r_means', np.array(r_means)
 	# print 'Total r_stds', np.array(r_stds)
 
+	
 	print 'Values of p', np.array(ps)
 
-	print 'Total p_means from edge forwarding', np.array(p_means2)
 
 	# print 'saved to file', filename
-	print(np.log(p_stds))
-	print('...........')
-	print(np.log(p_means))
-	plt.figure()
-	plt.yscale('log')
-	plt.errorbar(ps, p_means, yerr = [p_stds,p_stds],fmt = '-x' ,  label = 'Per-transaction forwarding')
-	plt.errorbar(ps, p_means2, yerr = [p_stds2,p_stds2], fmt = '-o', label = 'Per-incoming-edge forwarding')
-	plt.errorbar(ps, p_means3, yerr = [p_stds3, p_stds3], fmt = '-^', label = 'Diffusion')
-	# plt.plot(ps, np.log(p_means),  '-o', label = 'Random forwarding')
-	# plt.plot(ps, np.log(p_means2), '-o', label = 'Incoming edge based forwarding')
-	# plt.plot(ps, np.log(p_means3), '-o', label = 'Diffusion')
-	# plt.errorbar(ps, np.log(ps), yerr = 1)
-	plt.plot(ps,ps, label='p')
-	# plt.plot(ps, np.log(np.square(ps)), label='log(p*p)')
-	# plt.plot(ps, np.log(np.multiply(np.square(ps),np.log(np.divide(1.0,ps)))), label = 'log(p*p*log(1/p))')
-	plt.title('First spy precision on 4-regular graph (Dandelion++)')
-	plt.ylabel('log(Precision)')
-	plt.xlabel('Fraction of spies, p')
-	plt.legend(loc = 0)
-	plt.savefig('plot4.jpg')
-
-	# plt.plot(ps, r_means)
-	plt.show()
-	plt.close()	
+	settings_list = np.zeros((num_sims,), dtype=np.object)
+	settings_list[:] = [item for item in sim_settings.keys()]
+	print settings_list
+	scipy.io.savemat('sim_data.mat',{'p_means':np.array(p_means),
+										  'r_means':np.array(r_means), 
+										  'p_stds':np.array(p_stds), 
+										  'r_stds':np.array(r_stds), 
+										  'ps':np.array(ps),
+										  'num_nodes':n,
+										  'graph_type':sim_graph.__name__,
+										  'sim_settings':settings_list})
+	

@@ -73,15 +73,16 @@ class LineSimulator(Simulator):
 				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
 				preds = self.A.predecessors(node)	
 				succs = self.A.successors(node)
-				pred_succ_mapping[node][preds[0]] = random.choice(succs)
+				
 				if len(preds)>1 and len(succs)>1:	
+						pred_succ_mapping[node][preds[0]] = random.choice(succs)
 						succs = np.array(succs)				
 						pred_succ_mapping[node][preds[1]] = succs[np.where(succs!=pred_succ_mapping[node][preds[0]])[0][0]]
 						pred_succ_mapping[node][node] = random.choice(succs)
 				else:
 					if(len(preds)>1):
 						pred_succ_mapping[node][preds[1]] = pred_succ_mapping[node][preds[0]]				
-					pred_succ_mapping[node][node] = pred_succ_mapping[node][preds[0]]
+						pred_succ_mapping[node][node] = pred_succ_mapping[node][preds[0]]
 			elif incedge == 4:
 				pred_succ_mapping[node] = {}
 				preds = self.A.predecessors(node)	
@@ -106,8 +107,9 @@ class LineSimulator(Simulator):
 				if tail in path_list and incedge!=0:
 					neighbors = np.array(self.A.successors(tail))
 					if (incedge==1 or incedge==3 or incedge==4):
-						if (len(neighbors)>1):
-							now = neighbors[np.where(neighbors!=pred_succ_mapping[tail][pre_tail])[0][0]]
+						if (len(neighbors)>1 and tail in pred_succ_mapping):
+							if pre_tail in pred_succ_mapping[tail]:
+								now = neighbors[np.where(neighbors!=pred_succ_mapping[tail][pre_tail])[0][0]]
 						else:
 							now = pred_succ_mapping[tail][pre_tail]	
 					else :
@@ -116,7 +118,9 @@ class LineSimulator(Simulator):
 						else:
 							now = pred_succ_mapping[tail]		
 				elif incedge==1 or incedge==3 or incedge==4:
-					now = pred_succ_mapping[tail][pre_tail]		
+					if tail in pred_succ_mapping:
+						if pre_tail in pred_succ_mapping[tail]:
+							now = pred_succ_mapping[tail][pre_tail]		
 				elif incedge==2:
 					now = pred_succ_mapping[tail]
 				elif incedge==0:
@@ -392,6 +396,7 @@ class MaxWeightLineSimulator(LineSimulator):
 
 		# Run the simulation
 		spy_mapping = super(MaxWeightLineSimulator, self).run_simulation()
+		print(len(spy_mapping),'le')
 		# Compute the weights
 		self.compute_weights(spy_mapping)
 		# Compute a max-weight matching

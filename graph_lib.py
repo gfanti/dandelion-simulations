@@ -160,7 +160,8 @@ class QuasiRegGraphGen(GraphGen):
 			p 		fraction of spies
 			d 		degree of main graph (outdegree)
 		   	beta 	fraction of honest nodes that run dandelion
-	   		anon_graph_protocol 	which graph construction protocol to use (see global constants)
+	   		anon_graph_protocol 	which graph construction protocol to use (see constants @ 
+	   								beginning of file)
 			d_anon 		out-degree of anonymity graph
 		'''
 
