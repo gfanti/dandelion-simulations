@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import collections
 import math
 
-# incedge = False
+incedge = False
 MAIN_GRAPH = 0
 ANON_GRAPH = 1
 
@@ -164,8 +164,8 @@ class LineSimulator(Simulator):
 
 
 class FirstSpyLineSimulator(LineSimulator):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0):
-		super(FirstSpyLineSimulator, self).__init__(A, verbose)
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0, q=0.0):
+		super(FirstSpyLineSimulator, self).__init__(A, verbose, q)
 		self.p_and_r = p_and_r
 		self.num_honest_nodes = num_honest_nodes
 		global incedge

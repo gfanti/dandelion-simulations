@@ -1,0 +1,10 @@
+.DS_Store
+.ipynb_checkpoints/
+*.jpg
+*.pyc
+data/
+results/
+*.ipynb
+*.numbers
+*.mat
+

@@ -1,6 +1,7 @@
 # graph_lib.py
 # generates graphs for simulation
 
+
 import networkx as nx
 import random
 import numpy as np
@@ -148,7 +149,8 @@ class QuasiRegThreshGraphGen(GraphGen):
 		self.remove_self_loops()
 
 class QuasiRegGraphGen(GraphGen):
-	def __init__(self, n, p, d, verbose = False, beta = 1.0, anon_graph_protocol = 0, 
+	def __init__(self, n, p, d, verbose = False, beta = 1.0, 
+				 anon_graph_protocol = NO_VERSION_CHECKING, 
 				 d_anon = None):
 		''' Generates an approximately d-regular graph by making d/2 
 			outgoing connections at random. The algorithm also asks
@@ -266,7 +268,8 @@ class QuasiRegGraphGenSpiesOutbound(QuasiRegGraphGen):
 			self.A.add_edges_from([(spy, i) for i in honest_nodes])
 
 class QuasiRegGraphGenSpies(QuasiRegGraphGen):
-	def __init__(self, n, p, k, d, verbose = False, beta = 1.0, anon_graph_protocol = 0, 
+	def __init__(self, n, p, d = 8, verbose = False, k = 1, beta = 1.0, 
+				 anon_graph_protocol = NO_VERSION_CHECKING, 
 				 d_anon = None):
 		''' Generates an approximately d-regular graph by making d/2 
 			outgoing connections at random. The algorithm also asks
@@ -278,23 +281,18 @@ class QuasiRegGraphGenSpies(QuasiRegGraphGen):
 			n 		number of nodes
 			p 		fraction of spies
 			d 		degree of graph (outdegree)
-			k 		number of nodes to poll before choosing a connection
+			k 		number of nodes to poll before choosing a connection (default=1)
 		   	beta 	fraction of honest nodes that run dandelion
 	   		anon_graph_protocol 	which graph construction protocol to use (see global constants)
 			d_anon 		out-degree of anonymity graph
 		'''
 
-		super(QuasiRegGraphGen, self).__init__(n, p, d, verbose = False)
 		self.k = k
-		# self.d = d
-		self.beta = beta
-		self.anon_graph_protocol = anon_graph_protocol
 		self.A = nx.DiGraph() 	# anonymity graph, empty for now
-		self.d_anon = d_anon
-
-		# Generate the graph
-		self.generate_graph()
-
+		
+		super(QuasiRegGraphGenSpies, self).__init__(n, p, d, verbose, d_anon=d_anon)
+		
+		
 		if beta < 1.0:
 			self.assign_dandelion_nodes()
 			self.generate_anon_graph()
