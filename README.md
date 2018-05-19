@@ -17,7 +17,7 @@ The appropriate parameter configurations are listed below.
 
 In config_random_regular.py: 
 
-`sim_graph = graph_lib.RegGraphGen
+```sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
 
@@ -29,7 +29,7 @@ sim_settings['first_spy_dand_all_to_one'] = (sim_lib.FirstSpyLineSimulator,
 											{'p_and_r':True, 'edgebased':2})
 sim_settings['first_spy_dand_one_to_one'] = (sim_lib.FirstSpyLineSimulator,
 											{'p_and_r':True, 'edgebased':3})
-sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator, {})`
+sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator, {})```
 
 
 The file config_random_regular.py contains the simulation configurations needed to run the 
@@ -43,24 +43,24 @@ You will have to run the code twice, with difference parameter settings.
 quasi-4-regular:
 In config_random_regular.py:
 
-`sim_graph = graph_lib.QuasiRegGraphGen
+```sim_graph = graph_lib.QuasiRegGraphGen
 sim_graph_params = {'d_anon':2}
 
 sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator, 
 										   {'p_and_r':True, 'edgebased':0})
 sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, 
-										   {'p_and_r':True})`
+										   {'p_and_r':True})```
 
 
 exact 4-regular
 In config_random_regular.py:
-`sim_graph = graph_lib.RegGraphGen
+```sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
 sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator, 
 										   {'p_and_r':True, 'edgebased':0})
 sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, 
-										   {'p_and_r':True})`
+										   {'p_and_r':True})```
 
 
 ### Figure 8: Honest-but-curious spies obey graph construction protocol
