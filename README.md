@@ -7,13 +7,16 @@ config_random_regular.py, and then run:
 
 > python random_regular_propagation.py 
 
+The appropriate parameter configurations are listed below. 
+
 *Figure 5*: Recall vs number of transactions per node in random 4-regular graphs
 
 
 
 *Figure 6*: First-spy precision for 4-regular graphs under various routing schemes.
 
-# config_random_regular.py
+In config_random_regular.py: 
+
 sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
@@ -38,7 +41,8 @@ of routing: per-tx, per-incoming-edge, all-to-one, one-to-one, and diffusion.
 You will have to run the code twice, with difference parameter settings.
 
 quasi-4-regular:
-# config_random_regular.py
+In config_random_regular.py:
+
 sim_graph = graph_lib.QuasiRegGraphGen
 sim_graph_params = {'d_anon':2}
 
@@ -49,7 +53,7 @@ sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator,
 
 
 exact 4-regular
-# config_random_regular.py
+In config_random_regular.py:
 sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
