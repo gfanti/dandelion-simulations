@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import collections
 import math
 
-incedge = False
+# incedge = False
 MAIN_GRAPH = 0
 ANON_GRAPH = 1
 
@@ -53,10 +53,10 @@ class LineSimulator(Simulator):
 			# if node is a spy, add it to the dictionary
 			if spies[node]:
 				spy_mapping[node] = []
-			elif incedge==2:
+			elif incedge==2: # all-to-one
 				succs = self.A.successors(node)
 				pred_succ_mapping[node] = random.choice(succs)
-			elif incedge==1:
+			elif incedge==1: # per-incoming-edge
 				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
 				preds = self.A.predecessors(node)	
 				succs = self.A.successors(node)
@@ -69,20 +69,25 @@ class LineSimulator(Simulator):
 						pred_succ_mapping[node][node] = random.choice(succs)
 				else:		
 					pred_succ_mapping[node][node] = pred_succ_mapping[node].values()[0]			
-			elif incedge==3:
+			elif incedge==3: # one-to-one
 				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
 				preds = self.A.predecessors(node)	
 				succs = self.A.successors(node)
-				
-				if len(preds)>1 and len(succs)>1:	
-						pred_succ_mapping[node][preds[0]] = random.choice(succs)
-						succs = np.array(succs)				
-						pred_succ_mapping[node][preds[1]] = succs[np.where(succs!=pred_succ_mapping[node][preds[0]])[0][0]]
-						pred_succ_mapping[node][node] = random.choice(succs)
-				else:
-					if(len(preds)>1):
-						pred_succ_mapping[node][preds[1]] = pred_succ_mapping[node][preds[0]]				
-						pred_succ_mapping[node][node] = pred_succ_mapping[node][preds[0]]
+
+				if len(succs) > 0:
+					# map your own transaction randomly to the out-nodes
+					pred_succ_mapping[node][node] = random.choice(succs)
+					
+				# compute the one-to-one mapping
+				if len(preds)>0 and len(succs)>0:
+					succ_list = [item for item in succs]
+					random.shuffle(succ_list)
+					for pred in preds:
+						succ = succ_list.pop()
+						pred_succ_mapping[node][pred] = succ
+						if not succ_list:
+							succ_list = [item for item in succs]
+							random.shuffle(succ_list)
 			elif incedge == 4:
 				pred_succ_mapping[node] = {}
 				preds = self.A.predecessors(node)	
@@ -395,8 +400,7 @@ class MaxWeightLineSimulator(LineSimulator):
 		honest_nodes = [node for node in self.A if not self.A.node[node]['spy']]
 
 		# Run the simulation
-		spy_mapping = super(MaxWeightLineSimulator, self).run_simulation()
-		print(len(spy_mapping),'le')
+		spy_mapping, hops = super(MaxWeightLineSimulator, self).run_simulation()
 		# Compute the weights
 		self.compute_weights(spy_mapping)
 		# Compute a max-weight matching

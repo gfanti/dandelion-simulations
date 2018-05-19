@@ -17,6 +17,7 @@ path_trials = 30
 ds = [2]
 
 # ----- Fraction of spies ----#
+# ps = [0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
 ps = [ 0.25, 0.3, 0.4, 0.45, 0.5]
 
 
@@ -45,11 +46,11 @@ DIFFUSION = 2
     				sim_graph = graph_lib.CompleteGraphGen
 					sim_graph_params = {}
  '''
-# sim_graph = graph_lib.RegGraphGen
-# sim_graph_params = {}
+sim_graph = graph_lib.RegGraphGen
+sim_graph_params = {}
 
-sim_graph = graph_lib.QuasiRegGraphGen
-sim_graph_params = {'d_anon':2}
+# sim_graph = graph_lib.QuasiRegGraphGen
+# sim_graph_params = {'d_anon':2}
 
 
 ''' Populate the simulation settings (Simulator function, p_and_r, edgebased)
@@ -57,13 +58,16 @@ sim_graph_params = {'d_anon':2}
 sim_settings = {}
 sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator, 
 										   {'p_and_r':True, 'edgebased':0})
+sim_settings['first_spy_dand_per_edge'] = (sim_lib.FirstSpyLineSimulator, 
+									{'p_and_r':True, 'edgebased':1})
+sim_settings['first_spy_dand_all_to_one'] = (sim_lib.FirstSpyLineSimulator, 
+											{'p_and_r':True, 'edgebased':2})
+sim_settings['first_spy_dand_one_to_one'] = (sim_lib.FirstSpyLineSimulator,
+											{'p_and_r':True, 'edgebased':3})
+sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator, {})
+
 # sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, 
-# 								   {'p_and_r':True})
-# sim_settings['first_spy_dand_per_edge'] = (sim_lib.FirstSpyLineSimulator, 
-# 									{'p_and_r':True, 'edgebased':1})
-# sim_settings['first_spy_dand_all_to_one'] = (sim_lib.FirstSpyLineSimulator, True, 2)
-# sim_settings['first_spy_dand_one_to_one'] = (sim_lib.FirstSpyLineSimulator, True, 3)
-# sim_settings['first_spy_diffusion'] = [sim_lib.FirstSpyDiffusionSimulator]
+								   # {'p_and_r':True})
 
 
 
