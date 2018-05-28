@@ -26,7 +26,7 @@ sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, {'p_and_r':Tr
 ```
 
 #### Figure 5: Recall vs # of transactions per node in random 4-regular graphs
-
+Analogous data for Figure 5 can be produced with the scripts in the fingerprint-d2 directory under branch 'routing-simulations'
 
 
 #### Figure 6: First-spy precision for 4-regular graphs for various routing schemes.
@@ -129,5 +129,6 @@ sim_settings['first_spy_dand_q_0_5_spies_misbehave'] =
 ```
 
 #### Figures 14 and 15:
+Enter branch 'routing-simulations'. The data for Figure 14 can be produced with the directories ending in -u, and the data for Figure 15 can be produced with the directories ending in -k
 
 
