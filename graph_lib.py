@@ -30,7 +30,7 @@ class GraphGen(object):
 	def assign_spies(self):
 		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
 		spies = dict([(k, k in spy_list) for k in range(self.n)])
-		nx.set_node_attributes(self.G, 'spy', spies)
+		nx.set_node_attributes(self.G, spies, 'spy')
 
 	def remove_self_loops(self):
 		# Remove any length-2 loops
@@ -65,7 +65,7 @@ class DataGraphGen(object):
 		n = nx.number_of_nodes(self.G)
 		spy_list = random.sample(range(n), int(math.floor(self.p*n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
-		nx.set_node_attributes(self.G, 'spy', spies)
+		nx.set_node_attributes(self.G, spies, 'spy')
 		
 
 class RegGraphGen(GraphGen):
@@ -336,6 +336,6 @@ class CompleteGraphGen(GraphGen):
 		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
 		# spies = dict([(k, (random.random() < p)) for k in range(n)])
-		nx.set_node_attributes(G, 'spy', spies)
+		nx.set_node_attributes(G, spies, 'spy')
 
 		return G

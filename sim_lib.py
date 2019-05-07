@@ -129,7 +129,7 @@ class LineSimulator(Simulator):
 				elif incedge==2:
 					now = pred_succ_mapping[tail]
 				elif incedge==0:
-					neighbors = self.A.successors(tail)
+					neighbors = list(self.A.successors(tail))
 					now = random.choice(neighbors)
 				pre_tail = tail
 				path_list.append(tail)
@@ -285,7 +285,9 @@ class MaxWeightEstimator(object):
 		matching = nx.max_weight_matching(H, maxcardinality = True)
 		# print 'matching', matching
 		estimate = []
-		for a,b in matching.iteritems():
+		# for a,b in matching.iteritems():
+		for edge in matching:
+			(a, b) = edge
 			if a < 0 and b >= 0:
 				item = [inv_honest_node_mapping[msg_mapping.index(-a)], inv_honest_node_mapping[mapping.index(b)]]
 			elif b < 0 and a >= 0:
@@ -535,7 +537,7 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 			tail = node
 			path_length = 0
 			while True:
-				neighbors = self.A.successors(tail)
+				neighbors = list(self.A.successors(tail))
 				pre_tail = tail
 				tail = random.choice(neighbors)
 				path_length += 1

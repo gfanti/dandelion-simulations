@@ -7,7 +7,12 @@ config_random_regular.py, and then run:
 
 `python random_regular_propagation.py`
 
-The appropriate parameter configurations for the different figures are listed below. Unless stated otherwise, the listed code should be pasted into the appropriate part of config_random_regular.py. (this should be clear from context)
+The appropriate parameter configurations for the different figures are listed below. Unless stated otherwise, the listed code should be pasted into the appropriate part of the config file (config_random_regular.py). 
+
+Dependencies: 
+
+- Python 2.7 
+- NetworkX 2.2
 
 #### Figure 3: Average precision as a function of p for random, directed, d-regular graphs
 
