@@ -17,6 +17,12 @@ class SpyInfo:
 		self.source = source
 		self.relayed_to_spy = relayed_to_spy
 
+class SpyInfoLite(SpyInfo):
+	def __init__(self, spy_id, exit_node, source, stem = False):
+		super(SpyInfoLite, self).__init__(spy_id, exit_node, source)
+		self.stem = stem
+
+
 
 
 class Simulator(object):
@@ -28,9 +34,6 @@ class Simulator(object):
 		self.num_honest_nodes = num_honest_nodes
 		self.verbose = verbose
 
-class DandelionLiteSimulator(Simulator):
-	def __init__(self, A, verbose = False):
-		super(DandelionLiteSimulator, self).__init__(A, verbose)
 
 class LineSimulator(Simulator):
 	def __init__(self, A, verbose = False, q = 0.0):
@@ -162,9 +165,6 @@ class LineSimulator(Simulator):
 
 		return spy_mapping, hops
 
-
-
-
 class FirstSpyLineSimulator(LineSimulator):
 	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0, q=0.0):
 		super(FirstSpyLineSimulator, self).__init__(A, verbose, q)
@@ -207,9 +207,6 @@ class FirstSpyEstimator(object):
 					print('sources', [sources[i] for i in range(len(exit_list)) if exit_list[i] == exit])
 
 			for item in info:
-				# if verbose:
-				# 	print('exit node', item.exit_node)
-				# 	print('source', item.source)
 				if item.exit_node not in exits:
 					exits[item.exit_node] = [item.source]
 				else:
@@ -230,7 +227,6 @@ class FirstSpyEstimator(object):
 			return precision, recall, nodes_wards
 		else:
 			return precision
-
 
 class MaxWeightEstimator(object):
 	def __init__(self, A, honest_nodes, weights, verbose = False, p_and_r = False):
@@ -321,8 +317,6 @@ class MaxWeightEstimator(object):
 		recall = precision # because max weight outputs a matching, which has same precision and recall
 
 		return precision, recall
-
-
 
 
 class MaxWeightVerCheckEstimator(MaxWeightEstimator):
@@ -571,9 +565,6 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 
 		return spy_mapping
 
-
-
-
 class FirstSpyLineSimulatorMultipleTx(LineSimulator):
 	def __init__(self, A, num_honest_nodes, verbose = False, num_tx = 1):
 		super(FirstSpyLineSimulatorMultipleTx, self).__init__(A, verbose)
@@ -683,6 +674,92 @@ class DiffusionSimulator(Simulator):
 					neighbors += [[node, neighbor]]
 
 		return neighbors
+
+class DandelionLiteSimulator(DiffusionSimulator):
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = True):
+		super(DandelionLiteSimulator, self).__init__(A, num_honest_nodes, verbose)
+		self.p_and_r = p_and_r
+
+		spy_mapping = self.run_simulation()
+		est = FirstSpyEstimator(A, num_honest_nodes, verbose, p_and_r = True)
+		if p_and_r:
+			self.precision, self.recall, self.wards = est.compute_payout(spy_mapping)
+		else:
+			self.precision = est.compute_payout(spy_mapping)
+
+
+	def run_simulation(self, graph = MAIN_GRAPH):
+		''' Simulates dandelion lite spreading over a graph.
+		Parameters:
+			graph 	Which graph to spread over.
+					MAIN_GRAPH  =  regular P2P graph
+					ANON_GRAPH 	=  anonymity graph
+		'''
+
+		# Run a line simulation over A
+		# List of all spies
+		spies = nx.get_node_attributes(self.A,'spy')
+		spy_mapping = {}
+		if (graph == MAIN_GRAPH):
+			A = self.A
+
+		for node in self.A.nodes():
+			# if node is a spy, add it to the dictionary
+			if spies[node]:
+				spy_mapping[node] = []
+
+		# find the nodes reporting to each spy
+
+		#  each honest node sends a message
+		for node in self.A.nodes():
+			# print("starting node ", node)
+
+			if spies[node]:
+				# don't originate message from spy nodes
+				continue
+
+			# propagate over a one-hop step
+			neighbors = list(self.A.successors(node))
+			now = random.choice(neighbors)
+			path_length = 1
+
+			if spies[now]:
+				# for worst-case simulation, we are telling adversary whether msg was in stem phase or not. If we met a spy alread, end the spread
+				spy_mapping[now].append(SpyInfoLite(now, node, node, stem = True))
+				continue
+
+			# now run diffusion
+			infected = [now] # act as if node was not yet infected
+			boundary_edges = self.get_neighbor_set(infected, infected)
+			while boundary_edges:
+				next = random.choice(boundary_edges)
+				source = next[0]
+				target = next[1]
+				path_length += 1
+				# print('node', node, 'neighbors', neighbors, 'tail', tail)
+				if spies[target]:
+					# The adversary knows that msg is relayed, so it will pick one of source's predecessors as their best guess for the source
+					guess = random.choice(list(self.A.predecessors(node)))
+					spy_mapping[target].append(SpyInfoLite(target, guess, node, stem=False))
+					break
+				if path_length >= nx.number_of_nodes(self.A):
+					# there are no spies on this path, so we'll just assign the
+					#   last node to see the message to a spy
+					spy = random.choice(spy_mapping.keys())
+					guess = random.choice(self.A.nodes())
+					spy_mapping[spy].append(SpyInfoLite(spy, target, node, stem=False))
+					break
+				infected += [target]
+				boundary_edges.remove(next)
+				boundary_edges = [item for item in boundary_edges if item[1] != target]
+				boundary_edges += [[target, item] for item in nx.all_neighbors(self.A, target) if item not in infected]
+
+				# add next to boundary, remove the infecting node if it is eclipsed
+			if self.verbose:
+				print('Node ', node, ' traversed ', path_length, 'hops')
+
+		return spy_mapping
+
 
 class FirstSpyDiffusionSimulator(DiffusionSimulator):
 	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = True):
