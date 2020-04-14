@@ -1,17 +1,17 @@
 
 # Dandelion++ Simulations
-This repository contains the simulation code used to generate the figures in the paper Dandelion++: Lightweight Cryptocurrency Networking with Formal Anonymity Guarantees (2018). These simulations compare Dandelion spreading (and several of its variants) to diffusion on different types of graphs. 
+This repository contains the simulation code used to generate the figures in the paper Dandelion++: Lightweight Cryptocurrency Networking with Formal Anonymity Guarantees (2018). These simulations compare Dandelion spreading (and several of its variants) to diffusion on different types of graphs.
 
-To reproduce our experiments, you will need to set the appropriate parameters in 
+To reproduce our experiments, you will need to set the appropriate parameters in
 config_random_regular.py, and then run:
 
 `python random_regular_propagation.py`
 
-The appropriate parameter configurations for the different figures are listed below. Unless stated otherwise, the listed code should be pasted into the appropriate part of the config file (config_random_regular.py). 
+The appropriate parameter configurations for the different figures are listed below. Unless stated otherwise, the listed code should be pasted into the appropriate part of the config file (config_random_regular.py).
 
-Dependencies: 
+Dependencies:
 
-- Python 2.7 
+- Python 3.7.2
 - NetworkX 2.2
 
 #### Figure 3: Average precision as a function of p for random, directed, d-regular graphs
@@ -24,7 +24,7 @@ sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
 # simulation settings
-sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator, 
+sim_settings['first_spy_dand_per_tx'] = (sim_lib.FirstSpyLineSimulator,
 										   {'p_and_r':True, 'edgebased':0})
 sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
 
@@ -38,20 +38,20 @@ Analogous data for Figure 5 can be produced with the scripts in the fingerprint-
 
 
 ```
-ds = [2] 
+ds = [2]
 
 # graph type
 sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
 # simulation settings
-sim_settings['first_spy_dand_per_tx'] = 
+sim_settings['first_spy_dand_per_tx'] =
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':0})
-sim_settings['first_spy_dand_per_edge'] = 
+sim_settings['first_spy_dand_per_edge'] =
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':1})
-sim_settings['first_spy_dand_all_to_one'] = 
+sim_settings['first_spy_dand_all_to_one'] =
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':2})
-sim_settings['first_spy_dand_one_to_one'] = 
+sim_settings['first_spy_dand_one_to_one'] =
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':3})
 sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator, {})
 ```
@@ -71,9 +71,9 @@ sim_graph = graph_lib.QuasiRegGraphGen
 sim_graph_params = {'d_anon':2}
 
 # simulation settings
-sim_settings['first_spy_dand_per_tx'] = 
+sim_settings['first_spy_dand_per_tx'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':0})
-sim_settings['max_weight_dand'] = 
+sim_settings['max_weight_dand'] =
 	(sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
 ```
 
@@ -88,9 +88,9 @@ sim_graph = graph_lib.RegGraphGen
 sim_graph_params = {}
 
 # simulation settings
-sim_settings['first_spy_dand_per_tx'] = 
+sim_settings['first_spy_dand_per_tx'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':0})
-sim_settings['max_weight_dand'] = 
+sim_settings['max_weight_dand'] =
 	(sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
 ```
 
@@ -105,11 +105,11 @@ sim_graph = graph_lib.QuasiRegGraphGenSpies
 sim_graph_params = {'d_anon':2}
 
 # simulation settings
-sim_settings['first_spy_dand_q_0_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0})
-sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_25_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
-sim_settings['first_spy_dand_q_0_5_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_5_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.5})
 ```
 
@@ -125,11 +125,11 @@ sim_graph = graph_lib.QuasiRegGraphGenSpiesOutbound
 sim_graph_params = {'d_anon':2}
 
 # simulation settings
-sim_settings['first_spy_dand_q_0_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0})
-sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_25_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
-sim_settings['first_spy_dand_q_0_5_spies_misbehave'] = 
+sim_settings['first_spy_dand_q_0_5_spies_misbehave'] =
 	(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.5})
 ```
 

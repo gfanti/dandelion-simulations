@@ -18,11 +18,11 @@ class GraphGen(object):
 		'''	n -- number of nodes
 			p -- proportion of spies
 		'''
-	
+
 		self.n = n
 		self.p = p
 		self.verbose = verbose
-		
+
 		self.G = nx.DiGraph()
 		self.G.add_nodes_from(range(self.n))
 		self.assign_spies()
@@ -37,19 +37,19 @@ class GraphGen(object):
 		for node in self.G.nodes():
 			for successor in self.G.successors(node):
 				if successor == node and self.verbose:
-					print 'SELF LOOP'
+					print('SELF LOOP')
 					self.G.remove_edge(node, successor)
 					continue
 
 				if node in self.G.successors(successor) and self.verbose:
-					print '2-LOOP'
+					print('2-LOOP')
 					self.G.remove_edge(node, successor)
 
 
 class DataGraphGen(object):
 	def __init__(self, filename, p, verbose = False):
 		'''
-			Loads a graph from a gexf data file, and relabels the nodes in 
+			Loads a graph from a gexf data file, and relabels the nodes in
 			chronological order.
 		'''
 		self.G = nx.read_gexf(filename)
@@ -66,7 +66,7 @@ class DataGraphGen(object):
 		spy_list = random.sample(range(n), int(math.floor(self.p*n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
 		nx.set_node_attributes(self.G, spies, 'spy')
-		
+
 
 class RegGraphGen(GraphGen):
 	def __init__(self, n, p, d, verbose = False):
@@ -77,19 +77,19 @@ class RegGraphGen(GraphGen):
 
 		# Generate the graph
 		self.generate_graph()
-		
+
 		self.A = self.G
 
 
-	
+
 	def generate_graph(self):
 		''' Generates a directed random, d-regular graph with d/2 incoming and outgoing edges.'''
 		cycle = nx.cycle_graph(self.n)
-		
+
 		self.G.add_edges_from(nx.find_cycle(cycle))
 
-		
-		
+
+
 		for i in range(self.d-1):
 			perm = np.random.permutation(self.n)
 			mapping = {key:value for (key,value) in zip(range(self.n), perm)}
@@ -100,20 +100,20 @@ class RegGraphGen(GraphGen):
 
 		if self.verbose:
 			degrees = G.degree(G.nodes())
-			print collections.Counter(degrees.values())
+			print(collections.Counter(degrees.values()))
 
 
 class QuasiRegThreshGraphGen(GraphGen):
 	def __init__(self, n, p, d, k=0, verbose = False):
-		''' Generates an approximately d-regular graph by making d/2 
+		''' Generates an approximately d-regular graph by making d/2
 			outgoing connections at random. The algorithm also asks
-			each connection recipient if it already has degree d. If 
-			so, the connection originator tries another node. Each 
+			each connection recipient if it already has degree d. If
+			so, the connection originator tries another node. Each
 			connecting node makes k such queries, k >= 0.
 
 			d -- degree of graph (outdegree)
-		   	k -- number of times to ask if recipient has d 
-		   		 connections before just connecting anyway
+		 	k -- number of times to ask if recipient has d
+		 		connections before just connecting anyway
 		'''
 
 		super(QuasiRegThreshGraphGen, self).__init__(n, p, verbose)
@@ -126,7 +126,7 @@ class QuasiRegThreshGraphGen(GraphGen):
 
 	def generate_graph(self):
 
-		
+
 		# make the connections
 		for node in self.G.nodes():
 			# make a list of the other nodes in the graph
@@ -149,29 +149,29 @@ class QuasiRegThreshGraphGen(GraphGen):
 		self.remove_self_loops()
 
 class QuasiRegGraphGen(GraphGen):
-	def __init__(self, n, p, d, verbose = False, beta = 1.0, 
-				 anon_graph_protocol = NO_VERSION_CHECKING, 
-				 d_anon = None):
-		''' Generates an approximately d-regular graph by making d/2 
+	def __init__(self, n, p, d, verbose = False, beta = 1.0,
+				anon_graph_protocol = NO_VERSION_CHECKING,
+				d_anon = None):
+		''' Generates an approximately d-regular graph by making d/2
 			outgoing connections at random. The algorithm also asks
-			each connection recipient if it already has degree d. If 
-			so, the connection originator tries another node. Each 
+			each connection recipient if it already has degree d. If
+			so, the connection originator tries another node. Each
 			connecting node makes k such queries, k >= 0.
 
-			n 		number of nodes
-			p 		fraction of spies
-			d 		degree of main graph (outdegree)
-		   	beta 	fraction of honest nodes that run dandelion
-	   		anon_graph_protocol 	which graph construction protocol to use (see constants @ 
-	   								beginning of file)
-			d_anon 		out-degree of anonymity graph
+			n		number of nodes
+			p		fraction of spies
+			d		degree of main graph (outdegree)
+		 	beta	fraction of honest nodes that run dandelion
+	 		anon_graph_protocol	which graph construction protocol to use (see constants @
+	 								beginning of file)
+			d_anon		out-degree of anonymity graph
 		'''
 
 		super(QuasiRegGraphGen, self).__init__(n, p, verbose)
 		self.d = d
 		self.beta = beta
 		self.anon_graph_protocol = anon_graph_protocol
-		self.A = nx.DiGraph() 	# anonymity graph, empty for now
+		self.A = nx.DiGraph()	# anonymity graph, empty for now
 		self.d_anon = d_anon
 
 		# Generate the graph
@@ -187,7 +187,7 @@ class QuasiRegGraphGen(GraphGen):
 
 	def assign_dandelion_nodes(self):
 		n_honest = math.ceil((1 - self.p) * self.n)
-		dand_list = random.sample([v for v in self.G.nodes() if not self.G.node[v]['spy']], n_honest) 
+		dand_list = random.sample([v for v in self.G.nodes() if not self.G.node[v]['spy']], n_honest)
 		dand_list += [v for v in self.G.nodes() if self.G.node[v]['spy']]
 		dand_nodes = dict([(k, k in dand_list) for k in range(self.n)])
 		nx.set_node_attributes(self.G, 'dand', dand_nodes)
@@ -211,25 +211,25 @@ class QuasiRegGraphGen(GraphGen):
 
 	def generate_anon_graph(self):
 		# build up self.A (the anonymity graph)
-		 for n in self.G.nodes():
-		 	# Don't add edges for non-dandelion nodes
-		 	if self.beta < 1.0 and not self.G.node[n]['dand']:
-		 		continue
-	 		# select outgoing edges from each node's out-edges on the graph
-		 	successors = self.G.successors(n)
-		 	candidates = []
-		 	if self.anon_graph_protocol == VERSION_CHECKING:
-		 		dand_nodes = [v for v in successors if self.G.node[v]['dand']]
+		for n in self.G.nodes():
+			# Don't add edges for non-dandelion nodes
+			if self.beta < 1.0 and not self.G.node[n]['dand']:
+				continue
+			# select outgoing edges from each node's out-edges on the graph
+			successors = self.G.successors(n)
+			candidates = []
+			if self.anon_graph_protocol == VERSION_CHECKING:
+				dand_nodes = [v for v in successors if self.G.node[v]['dand']]
 				if not dand_nodes:
 					candidates = successors
 				else:
 					candidates = dand_nodes
-	 		elif self.anon_graph_protocol == NO_VERSION_CHECKING:
-	 			candidates = successors
+			elif self.anon_graph_protocol == NO_VERSION_CHECKING:
+				candidates = successors
 
- 			out_edges = random.sample(candidates, min([self.d_anon, len(candidates)]))
- 			new_edges = [(n, item) for item in out_edges]
- 			self.A.add_edges_from(new_edges)
+			out_edges = random.sample(candidates, min([self.d_anon, len(candidates)]))
+			new_edges = [(n, item) for item in out_edges]
+			self.A.add_edges_from(new_edges)
 
 class QuasiRegGraphGenEavesdropper(QuasiRegGraphGen):
 	def __init__(self, n, theta, d, verbose = False, d_anon = None):
@@ -245,17 +245,17 @@ class QuasiRegGraphGenEavesdropper(QuasiRegGraphGen):
 
 class QuasiRegGraphGenSpiesOutbound(QuasiRegGraphGen):
 	def __init__(self, n, p, d, verbose = False, d_anon = None):
-		''' Generates an approximately d-regular graph by making d/2 
+		''' Generates an approximately d-regular graph by making d/2
 			outgoing connections at random. Spies always connect to all
 			honest nodes.
 
-			n 		number of nodes
-			p 		fraction of spies
-			d 		degree of graph (outdegree)
+			n		number of nodes
+			p		fraction of spies
+			d		degree of graph (outdegree)
 		'''
 
 		super(QuasiRegGraphGenSpiesOutbound, self).__init__(n, p, d, verbose, d_anon=d_anon)
-		
+
 		# Make sure that each spy is connected to all the honest nodes
 		spies = [n for n in self.G.nodes() if self.G.node[n]['spy']]
 		honest_nodes = list(set(self.G.nodes()) - set(spies))
@@ -268,31 +268,31 @@ class QuasiRegGraphGenSpiesOutbound(QuasiRegGraphGen):
 			self.A.add_edges_from([(spy, i) for i in honest_nodes])
 
 class QuasiRegGraphGenSpies(QuasiRegGraphGen):
-	def __init__(self, n, p, d = 8, verbose = False, k = 1, beta = 1.0, 
-				 anon_graph_protocol = NO_VERSION_CHECKING, 
-				 d_anon = None):
-		''' Generates an approximately d-regular graph by making d/2 
+	def __init__(self, n, p, d = 8, verbose = False, k = 1, beta = 1.0,
+				anon_graph_protocol = NO_VERSION_CHECKING,
+				d_anon = None):
+		''' Generates an approximately d-regular graph by making d/2
 			outgoing connections at random. The algorithm also asks
-			each connection recipient if it already has degree d. If 
-			so, the connection originator tries another node. Each 
-			connecting node makes k such queries, k >= 0. Spies always 
+			each connection recipient if it already has degree d. If
+			so, the connection originator tries another node. Each
+			connecting node makes k such queries, k >= 0. Spies always
 			lie about their degrees, claiming they have degree 0
 
-			n 		number of nodes
-			p 		fraction of spies
-			d 		degree of graph (outdegree)
-			k 		number of nodes to poll before choosing a connection (default=1)
-		   	beta 	fraction of honest nodes that run dandelion
-	   		anon_graph_protocol 	which graph construction protocol to use (see global constants)
-			d_anon 		out-degree of anonymity graph
+			n		number of nodes
+			p		fraction of spies
+			d		degree of graph (outdegree)
+			k		number of nodes to poll before choosing a connection (default=1)
+		 	beta	fraction of honest nodes that run dandelion
+	 		anon_graph_protocol	which graph construction protocol to use (see global constants)
+			d_anon		out-degree of anonymity graph
 		'''
 
 		self.k = k
-		self.A = nx.DiGraph() 	# anonymity graph, empty for now
-		
+		self.A = nx.DiGraph()	# anonymity graph, empty for now
+
 		super(QuasiRegGraphGenSpies, self).__init__(n, p, d, verbose, d_anon=d_anon)
-		
-		
+
+
 		if beta < 1.0:
 			self.assign_dandelion_nodes()
 			self.generate_anon_graph()
@@ -312,17 +312,17 @@ class QuasiRegGraphGenSpies(QuasiRegGraphGen):
 			else:
 				for connection in range(self.d):
 					choices = random.sample(nodes_other, self.k)
-					# print 'choices', choices
+					# print('choices', choices)
 					degrees = [self.G.degree(i) if not self.G.node[i]['spy'] else 0 for i in choices]
-					# print 'degrees', degrees
+					# print('degrees', degrees)
 					min_degree_indices = [i for i in range(len(degrees)) if degrees[i] == min(degrees)]
-					# print 'min degree indices', min_degree_indices
+					# print('min degree indices', min_degree_indices)
 					target = choices[np.random.choice(min_degree_indices)]
 
 					self.G.add_edge(node, target)
 
 		self.remove_self_loops()
-	
+
 
 class CompleteGraphGen(GraphGen):
 	def __init__(self, n, p, verbose = False):
@@ -331,7 +331,7 @@ class CompleteGraphGen(GraphGen):
 		self.G = self.generate_graph()
 
 	def generate_graph(self):
-		
+
 		G = nx.complete_graph(self.n).to_directed()
 		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
