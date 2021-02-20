@@ -86,6 +86,7 @@ sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = \
 sim_settings['first_spy_dand_q_0_00_spies_misbehave'] = \
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.0})
 sim_settings['dandelion_lite'] = (sim_lib.DandelionLiteSimulator, {'p_and_r':True})
+
 # sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
 
 

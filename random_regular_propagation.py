@@ -175,7 +175,7 @@ if __name__=='__main__':
 
 
 
-				if verbose:
+				if verbose and i == 0:
 					# plot the graph
 					plot_graph(G)
 

@@ -25,7 +25,7 @@ class GraphGen(object):
 		self.G.add_nodes_from(range(self.n))
 		self.assign_spies()
 		if self.verbose:
-			print("Generated a graph with %d nodes and assigned fraction %d of spies", n, p)
+			print(f"Generated a graph with {n} nodes and assigned fraction {p} of spies")
 
 	def assign_spies(self):
 		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
