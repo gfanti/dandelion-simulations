@@ -68,11 +68,11 @@ def plot_results(p_means, p_stds, r_means, r_stds, ps,
 		plt.plot(r_mean, p_mean, 'o-')
 	plt.xlabel("Recall")
 	plt.ylabel("Precision")
-	legend1 = plt.legend(settings_list)
+	legend1 = plt.legend(settings_list, loc = "upper left")
 	for r_mean, p_mean in zip(r_means, p_means):
 		lmin = plt.scatter(r_mean[0], p_mean[0], s=100, facecolors = 'none', edgecolors = 'k')
 		lmax = plt.scatter(r_mean[-1], p_mean[-1], s=100, marker = 's', facecolors = 'none', edgecolors = 'k')
-	plt.legend([lmin, lmax], [f'Spy fraction p = {ps[0]}', f'Spy fraction p = {ps[-1]}'], loc=4)
+	plt.legend([lmin, lmax], [f'Spy fraction p = {ps[0]}', f'Spy fraction p = {ps[-1]}'], loc = 4)
 	plt.gca().add_artist(legend1)
 	plt.title("Precision vs. Recall (lower left is best)")
 	plt.savefig("results/precision_vs_recall")

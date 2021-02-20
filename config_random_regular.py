@@ -10,10 +10,10 @@ n = 100	# number of nodes
 verbose = False	# debug?
 
 # Number of graphs used
-graph_trials = 2
+graph_trials = 20
 
 # Number of trials per graph
-path_trials = 30
+path_trials = 20
 # path_trials = 1
 
 # ----- Out-degree of random regular graph ----#
@@ -81,6 +81,8 @@ sim_graph_params = {}
 sim_settings = {}
 sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator,
 										{'p_and_r':True})
+sim_settings['first_spy_dand_q_1_000_spies_misbehave'] = \
+		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':1.0})
 sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = \
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
 sim_settings['first_spy_dand_q_0_00_spies_misbehave'] = \

@@ -26,7 +26,7 @@ class SpyInfoLite(SpyInfo):
 
 
 class Simulator(object):
-	def __init__(self, A, num_honest_nodes, verbose = False):
+	def __init__(self, A, num_honest_nodes = None, verbose = False):
 		'''	A -- graph over which to spread
 		'''
 
@@ -37,7 +37,7 @@ class Simulator(object):
 
 class LineSimulator(Simulator):
 	def __init__(self, A, verbose = False, q = 0.0):
-		super(LineSimulator, self).__init__(A, verbose)
+		super(LineSimulator, self).__init__(A, verbose = verbose)
 		self.q = q
 
 	def run_simulation(self, graph = MAIN_GRAPH):
@@ -108,6 +108,7 @@ class LineSimulator(Simulator):
 		for node in self.A.nodes():
 			# print("starting node ", node)
 			if spies[node]:
+				# Don't disseminate messages from spies
 				continue
 			spy_found = False
 			pre_tail = node
@@ -144,24 +145,30 @@ class LineSimulator(Simulator):
 				path_length += 1
 				if spies[tail]:
 					spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+					if self.verbose:
+						print("Reached a spy!")
 					break
 				if np.random.binomial(1, self.q):
-					# end the stem
+					# end the stem. We conservatively assume the adversary gets to see the tail node exactly. 
+					# Since the tail is not a spy, we have the adversary guess one of the
+					# tail node's predecessors uniformly at random
+					guess = random.choice(list(self.A.predecessors(tail)))
+					spy_info = SpyInfoLite(tail, guess, node)
 					if tail in spy_mapping:
-						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
+						spy_mapping[tail].append(spy_info)
 					else:
-						spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
+						spy_mapping[tail] = [spy_info]
 					break
 				if path_length > nx.number_of_nodes(self.A):
 				# if tail in
 					# there are no spies on this path, so we'll just assign the
 					#   last node to see the message to a spy
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, tail, node))
 					break
-			if self.verbose:
-				print('Node ', node, ' traversed ', path_length, 'hops')
 			hops[path_length] +=1
+			if self.verbose:
+				print(f'Node {node} traversed {path_length} hops')
 
 		return spy_mapping, hops
 
@@ -720,6 +727,8 @@ class DandelionLiteSimulator(DiffusionSimulator):
 
 			# propagate over a one-hop step
 			neighbors = list(self.A.successors(node))
+			if self.verbose:
+				print(f"Node {node} has neighbors {neighbors}")
 			now = random.choice(neighbors)
 			path_length = 1
 
@@ -739,8 +748,10 @@ class DandelionLiteSimulator(DiffusionSimulator):
 				# print('node', node, 'neighbors', neighbors, 'tail', tail)
 				if spies[target]:
 					# The adversary knows that msg is relayed, so it will pick one of source's predecessors as their best guess for the source
-					guess = random.choice(list(self.A.predecessors(node)))
+					guess = random.choice(list(self.A.predecessors(source)))
 					spy_mapping[target].append(SpyInfoLite(target, guess, node, stem=False))
+					# # Do not tell the adversary that the message was relayed
+					# spy_mapping[target].append(SpyInfoLite(target, source, node, stem=True))
 					break
 				if path_length >= nx.number_of_nodes(self.A):
 					# there are no spies on this path, so we'll just assign the
