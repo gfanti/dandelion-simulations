@@ -50,16 +50,35 @@ def plot_results(p_means, p_stds, r_means, r_stds, ps,
 	plt.ylabel("Precision")
 	plt.legend(settings_list)
 	plt.title("Deanonymization Precision (lower is better)")
-	plt.show()
+	plt.savefig("results/precision")
 
 	# Plot the recall results
+	plt.figure()
 	for mean, std in zip(r_means, r_stds):
 		plt.errorbar(ps, mean, std)
 	plt.xlabel("Spy Fraction p")
 	plt.ylabel("Recall")
 	plt.legend(settings_list)
 	plt.title("Deanonymization Recall (lower is better)")
-	plt.show()
+	plt.savefig("results/recall")
+
+	# Plot precision vs. recall results
+	plt.figure()
+	for r_mean, p_mean in zip(r_means, p_means):
+		plt.plot(r_mean, p_mean, 'o-')
+	plt.xlabel("Recall")
+	plt.ylabel("Precision")
+	legend1 = plt.legend(settings_list)
+	for r_mean, p_mean in zip(r_means, p_means):
+		lmin = plt.scatter(r_mean[0], p_mean[0], s=100, facecolors = 'none', edgecolors = 'k')
+		lmax = plt.scatter(r_mean[-1], p_mean[-1], s=100, marker = 's', facecolors = 'none', edgecolors = 'k')
+	plt.legend([lmin, lmax], [f'Spy fraction p = {ps[0]}', f'Spy fraction p = {ps[-1]}'], loc=4)
+	plt.gca().add_artist(legend1)
+	plt.title("Precision vs. Recall (lower left is best)")
+	plt.savefig("results/precision_vs_recall")
+	if verbose:
+		plt.show()
+	
 
 def run_sims(G, num_nodes, verbose, sim_type, sim_params):
 	''' Run simulation according to the settings specified in sim_settings'''

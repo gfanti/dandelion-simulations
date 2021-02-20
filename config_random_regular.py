@@ -10,7 +10,7 @@ n = 100	# number of nodes
 verbose = False	# debug?
 
 # Number of graphs used
-graph_trials = 20
+graph_trials = 2
 
 # Number of trials per graph
 path_trials = 30
@@ -55,6 +55,10 @@ sim_graph_params = {}
 
 
 ''' Populate the simulation type and parameters
+ Parameters:
+	p_and_r:	Compute precision and recall (true) or just precision (false)
+	q:			Probability of transitioning to fluff (for dandelion)
+
  Options:
  	sim_settings['first_spy_dand_per_tx'] =
  		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'edgebased':0})
@@ -77,6 +81,10 @@ sim_graph_params = {}
 sim_settings = {}
 sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator,
 										{'p_and_r':True})
+sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = \
+		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
+sim_settings['first_spy_dand_q_0_00_spies_misbehave'] = \
+		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.0})
 sim_settings['dandelion_lite'] = (sim_lib.DandelionLiteSimulator, {'p_and_r':True})
 # sim_settings['max_weight_dand'] = (sim_lib.MaxWeightLineSimulator, {'p_and_r':True})
 
