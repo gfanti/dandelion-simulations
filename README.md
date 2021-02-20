@@ -14,6 +14,18 @@ Dependencies:
 - Python 3.7.2
 - NetworkX 2.2
 
+
+## Output format
+The results of these simulations will be written to a *.mat file, which can be read by Matlab or Octave. Upon running the code below, load "results/sim_data.mat". You will find a dictionary with the following fields, which are a combination of the configuration settings of the experiment, and the measured results: 
+	p_means: 	array of the mean adversarial precision in mapping transactions to nodes
+	r_means: 	array of the mean adversarial recall in mapping transactions to nodes
+	p_stds:		array of the standard deviation of measured adversarial precision
+	r_stds:		array of the standard deviation of measured adversarial recall
+	ps:			array containing the values of spy fraction p used in the experiment
+	num_nodes:	integer n, the number of nodes in the simulated graph
+	graph_type:	the type of graph (random regular, etc.)
+	sim_settings:	list of other simulation settings specified in config
+
 #### Figure 3: Average precision as a function of p for random, directed, d-regular graphs
 
 ```
@@ -135,5 +147,10 @@ sim_settings['first_spy_dand_q_0_5_spies_misbehave'] =
 
 #### Figures 14 and 15:
 Enter branch 'routing-simulations'. The data for Figure 14 can be produced with the directories ending in -u, and the data for Figure 15 can be produced with the directories ending in -k
+
+### Dandelion-Lite
+Dandelion-lite is an extension of Dandelion that is described in more detail here. 
+
+
 
 

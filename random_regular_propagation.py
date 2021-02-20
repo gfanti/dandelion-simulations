@@ -13,6 +13,7 @@ import collections
 import math
 import scipy.io
 import sys
+import os
 
 
 
@@ -37,6 +38,27 @@ def plot_graph(G):
 
 	nx.draw(G, pos, node_color = values)
 	nx.draw_networkx_labels(G, pos, labels, font_size = 16)
+	plt.show()
+
+def plot_results(p_means, p_stds, r_means, r_stds, ps,
+				 n, settings_list):
+	''' Plot the output of our experiments '''
+	# Plot the precision results
+	for mean, std in zip(p_means, p_stds):
+		plt.errorbar(ps, mean, std)
+	plt.xlabel("Spy Fraction p")
+	plt.ylabel("Precision")
+	plt.legend(settings_list)
+	plt.title("Deanonymization Precision (lower is better)")
+	plt.show()
+
+	# Plot the recall results
+	for mean, std in zip(r_means, r_stds):
+		plt.errorbar(ps, mean, std)
+	plt.xlabel("Spy Fraction p")
+	plt.ylabel("Recall")
+	plt.legend(settings_list)
+	plt.title("Deanonymization Recall (lower is better)")
 	plt.show()
 
 def run_sims(G, num_nodes, verbose, sim_type, sim_params):
@@ -70,7 +92,7 @@ if __name__=='__main__':
 		q = float(sys.argv[1])
 	else:
 		q = 0.0
-	print('q is', q)
+	# print('q is', q)
 
 	if len(sys.argv) > 2:
 		semi_honest = bool(sys.argv[2])
@@ -79,10 +101,10 @@ if __name__=='__main__':
 	print('semi_honest:', semi_honest)
 
 	for d in ds:
-		print('d is ', d)
+		print('Graph out-degree d is ', d)
 
 		for p in ps:
-			print('p is', p)
+			print(f"\nFraction of spies p is {p}")
 
 			# Collect the precision and recall per graph per trial here
 			graph_precision = [0 for i in range(num_sims)]
@@ -154,22 +176,28 @@ if __name__=='__main__':
 				r_stds[idx].append(graph_recall_std[idx])
 
 
+	p_means = np.array(p_means)
+	p_stds = np.array(p_stds)
+	r_means = np.array(r_means)
+	r_stds = np.array(r_stds)
+	ps = np.array(ps)
 
-	print('Total p_means', np.array(p_means))
-	# print 'Total p_stds', np.array(p_stds)
+	print('Total p_means', p_means)
+	# print 'Total p_stds', p_stds
 
-	print('Total r_means', np.array(r_means))
-	# print 'Total r_stds', np.array(r_stds)
+	print('Total r_means', r_means)
+	# print 'Total r_stds', r_stds
+
+	if verbose:
+		print('Values of p', ps)
 
 
-	print('Values of p', np.array(ps))
-
-
-	# print 'saved to file', filename
 	settings_list = np.zeros((num_sims,), dtype=np.object)
 	settings_list[:] = [item for item in sim_settings.keys()]
 	print(settings_list)
-	scipy.io.savemat('sim_data.mat',{'p_means':np.array(p_means),
+	if not os.path.exists('results'):
+		os.makedirs('results')
+	scipy.io.savemat('results/sim_data.mat',{'p_means':np.array(p_means),
 										  'r_means':np.array(r_means),
 										  'p_stds':np.array(p_stds),
 										  'r_stds':np.array(r_stds),
@@ -177,3 +205,5 @@ if __name__=='__main__':
 										  'num_nodes':n,
 										  'graph_type':sim_graph.__name__,
 										  'sim_settings':settings_list})
+	
+	plot_results(p_means, p_stds, r_means, r_stds, ps, n, settings_list)

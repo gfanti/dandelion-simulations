@@ -5,8 +5,6 @@
 import networkx as nx
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-import collections
 import math
 
 # Graph construction protocols
@@ -26,6 +24,8 @@ class GraphGen(object):
 		self.G = nx.DiGraph()
 		self.G.add_nodes_from(range(self.n))
 		self.assign_spies()
+		if self.verbose:
+			print("Generated a graph with %d nodes and assigned fraction %d of spies", n, p)
 
 	def assign_spies(self):
 		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
@@ -33,17 +33,17 @@ class GraphGen(object):
 		nx.set_node_attributes(self.G, spies, 'spy')
 
 	def remove_self_loops(self):
-		# Remove any length-2 loops
+		# Remove any self-loops
 		for node in self.G.nodes():
 			for successor in self.G.successors(node):
-				if successor == node and self.verbose:
+				if successor == node:
 					print('SELF LOOP')
 					self.G.remove_edge(node, successor)
 					continue
 
-				if node in self.G.successors(successor) and self.verbose:
-					print('2-LOOP')
-					self.G.remove_edge(node, successor)
+				# if node in self.G.successors(successor) and self.verbose:
+				# 	print(node, '2-LOOP')
+				# 	# self.G.remove_edge(node, successor)
 
 
 class DataGraphGen(object):
@@ -90,7 +90,7 @@ class RegGraphGen(GraphGen):
 
 
 
-		for i in range(self.d-1):
+		for _ in range(self.d-1):
 			perm = np.random.permutation(self.n)
 			mapping = {key:value for (key,value) in zip(range(self.n), perm)}
 			cycle = nx.relabel_nodes(cycle, mapping) # add a single hamiltonian cycle
@@ -99,8 +99,8 @@ class RegGraphGen(GraphGen):
 		self.remove_self_loops()
 
 		if self.verbose:
-			degrees = G.degree(G.nodes())
-			print(collections.Counter(degrees.values()))
+			degrees = self.G.degree(self.G.nodes())
+			print("Generated a graph with the following degrees:", degrees)
 
 
 class QuasiRegThreshGraphGen(GraphGen):

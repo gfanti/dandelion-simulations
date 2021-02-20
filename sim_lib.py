@@ -10,7 +10,7 @@ incedge = False
 MAIN_GRAPH = 0
 ANON_GRAPH = 1
 
-class SpyInfo:
+class SpyInfo(object):
 	def __init__(self, spy_id, exit_node, source, relayed_to_spy = True):
 		self.id = spy_id
 		self.exit_node = exit_node

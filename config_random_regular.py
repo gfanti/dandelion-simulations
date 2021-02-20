@@ -10,15 +10,15 @@ n = 100	# number of nodes
 verbose = False	# debug?
 
 # Number of graphs used
-# graph_trials = 1
 graph_trials = 20
 
 # Number of trials per graph
 path_trials = 30
+# path_trials = 1
 
 # ----- Out-degree of random regular graph ----#
 # ds = [4,6,8]
-ds = [8]
+ds = [4]
 
 # ----- Fraction of spies ----#
 # ps = [0.02, 0.04, 0.08,  0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.45, 0.5]
