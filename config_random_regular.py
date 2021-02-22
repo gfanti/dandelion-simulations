@@ -58,6 +58,12 @@ sim_graph_params = {}
  Parameters:
 	p_and_r:	Compute precision and recall (true) or just precision (false)
 	q:			Probability of transitioning to fluff (for dandelion)
+	beyond_stem:	Should we simulate beyond the end of the stem? setting this
+					to False means the adversary is stronger, and can see the 
+					final stem node exactly. Setting this to True means the 
+					adversary does not exactly learn the final stem node and 
+					has to estimate it from subsequent spreading. This parameter
+					can currently only be applied to the DandelionLiteSimulator.
 
  Options:
  	sim_settings['first_spy_dand_per_tx'] =
@@ -83,10 +89,14 @@ sim_settings['first_spy_diffusion'] = (sim_lib.FirstSpyDiffusionSimulator,
 										{'p_and_r':True})
 sim_settings['first_spy_dand_q_1_000_spies_misbehave'] = \
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':1.0})
-sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = \
-		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
+# sim_settings['first_spy_dand_q_0_25_spies_misbehave'] = \
+# 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.25})
 sim_settings['first_spy_dand_q_0_00_spies_misbehave'] = \
 		(sim_lib.FirstSpyLineSimulator, {'p_and_r':True, 'q':0.0})
+# Dandelion Lite with stronger adversary (learns last stem node exactly)
+sim_settings['dandelion_lite_worst_case'] = (sim_lib.DandelionLiteSimulator, {'p_and_r':True, \
+																   'beyond_stem':False})
+# Dandelion Lite with weaker adversary (doesn't learn last stem node exactly)
 sim_settings['dandelion_lite'] = (sim_lib.DandelionLiteSimulator, {'p_and_r':True, \
 																   'beyond_stem':True})
 
