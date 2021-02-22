@@ -683,11 +683,11 @@ class DiffusionSimulator(Simulator):
 		return neighbors
 
 class DandelionLiteSimulator(DiffusionSimulator):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = True):
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = True, beyond_stem = True):
 		super(DandelionLiteSimulator, self).__init__(A, num_honest_nodes, verbose)
 		self.p_and_r = p_and_r
 
-		spy_mapping = self.run_simulation()
+		spy_mapping = self.run_simulation(beyond_stem = beyond_stem)
 		est = FirstSpyEstimator(A, num_honest_nodes, verbose, p_and_r = True)
 		if p_and_r:
 			self.precision, self.recall, self.wards = est.compute_payout(spy_mapping)
@@ -695,7 +695,7 @@ class DandelionLiteSimulator(DiffusionSimulator):
 			self.precision = est.compute_payout(spy_mapping)
 
 
-	def run_simulation(self, graph = MAIN_GRAPH):
+	def run_simulation(self, graph = MAIN_GRAPH, beyond_stem = True):
 		''' Simulates dandelion lite spreading over a graph.
 		Parameters:
 			graph 	Which graph to spread over.
@@ -733,8 +733,20 @@ class DandelionLiteSimulator(DiffusionSimulator):
 			path_length = 1
 
 			if spies[now]:
-				# for worst-case simulation, we are telling adversary whether msg was in stem phase or not. If we met a spy alread, end the spread
+				# for worst-case simulation, we are telling adversary whether msg was 
+				# in stem phase or not. If we met a spy alread, end the spread
 				spy_mapping[now].append(SpyInfoLite(now, node, node, stem = True))
+				continue
+
+			if not beyond_stem:
+				# If the adversary is given exact knowledge of the final stem node, the 
+				# adversary can just pick a predecessor at random
+				guess = random.choice(list(self.A.predecessors(now)))
+				spy_info = SpyInfoLite(now, guess, node, stem=True)
+				if now in spy_mapping:
+					spy_mapping[now].append(spy_info)
+				else:
+					spy_mapping[now] = [spy_info]
 				continue
 
 			# now run diffusion
