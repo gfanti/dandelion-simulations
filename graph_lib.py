@@ -216,7 +216,7 @@ class QuasiRegGraphGen(GraphGen):
 			if self.beta < 1.0 and not self.G.node[n]['dand']:
 				continue
 			# select outgoing edges from each node's out-edges on the graph
-			successors = self.G.successors(n)
+			successors = list(self.G.successors(n))
 			candidates = []
 			if self.anon_graph_protocol == VERSION_CHECKING:
 				dand_nodes = [v for v in successors if self.G.node[v]['dand']]
@@ -257,14 +257,16 @@ class QuasiRegGraphGenSpiesOutbound(QuasiRegGraphGen):
 		super(QuasiRegGraphGenSpiesOutbound, self).__init__(n, p, d, verbose, d_anon=d_anon)
 		
 		# Make sure that each spy is connected to all the honest nodes
-		spies = [n for n in self.G.nodes() if self.G.node[n]['spy']]
+		nodelist = list(self.G.nodes())
+		spies = [n for n in nodelist if self.G.nodes[n]['spy']]
+		print(spies, type(spies))
 		honest_nodes = list(set(self.G.nodes()) - set(spies))
 		for spy in spies:
 			# Main P2P graph
-			self.G.remove_edges_from(self.G.out_edges(spy))
+			self.G.remove_edges_from(list(self.G.out_edges(spy)))
 			self.G.add_edges_from([(spy, i) for i in honest_nodes])
 			# Anonymity graph
-			self.A.remove_edges_from(self.A.out_edges(spy))
+			self.A.remove_edges_from(list(self.A.out_edges(spy)))
 			self.A.add_edges_from([(spy, i) for i in honest_nodes])
 
 class QuasiRegGraphGenSpies(QuasiRegGraphGen):
