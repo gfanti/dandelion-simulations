@@ -27,7 +27,7 @@ def write_results(results_names, results_data, param_types, params, run_num = No
 		f.write(param_type)
 		f.write(': ')
 		for item in param:
-		  f.write("%s " % item)		
+			f.write("%s " % item)		
 		f.write('\n')
 
 	for (result_type, result) in zip(results_names, results_data):
@@ -35,8 +35,8 @@ def write_results(results_names, results_data, param_types, params, run_num = No
 		f.write('\n')
 
 		for item in result:
-		  f.write("%s " % item)
-	  	f.write('\n')
+			f.write("%s " % item)
+		f.write('\n')
 
 	f.close()
 
@@ -61,11 +61,11 @@ def parse_arguments():
 	if not (args.run is None):
 		args.write = True
 
-	print '---Selected Parameters---'
-	print 'verbose: ', args.verbose
-	print 'write to file: ', args.write
-	print 'spreading mechanism: ', args.spreading
-	print 'estimators: ', args.estimators
-	print 'run: ', args.run
-	print 'num trials: ', args.trials, '\n'
+	print('---Selected Parameters---')
+	print('verbose: ', args.verbose)
+	print('write to file: ', args.write)
+	print('spreading mechanism: ', args.spreading)
+	print('estimators: ', args.estimators)
+	print('run: ', args.run)
+	print('num trials: ', args.trials, '\n')
 	return args

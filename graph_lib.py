@@ -24,11 +24,11 @@ class GraphGen(object):
 		self.verbose = verbose
 		
 		self.G = nx.DiGraph()
-		self.G.add_nodes_from(range(self.n))
+		self.G.add_nodes_from(list(range(self.n)))
 		self.assign_spies()
 
 	def assign_spies(self):
-		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
+		spy_list = random.sample(list(range(self.n)), int(math.floor(self.p*self.n)))
 		spies = dict([(k, k in spy_list) for k in range(self.n)])
 		nx.set_node_attributes(self.G, spies, 'spy')
 
@@ -37,12 +37,12 @@ class GraphGen(object):
 		for node in self.G.nodes():
 			for successor in self.G.successors(node):
 				if successor == node and self.verbose:
-					print 'SELF LOOP'
+					print('SELF LOOP')
 					self.G.remove_edge(node, successor)
 					continue
 
 				if node in self.G.successors(successor) and self.verbose:
-					print '2-LOOP'
+					print('2-LOOP')
 					self.G.remove_edge(node, successor)
 
 
@@ -54,7 +54,7 @@ class DataGraphGen(object):
 		'''
 		self.G = nx.read_gexf(filename)
 		mapping = {}
-		for (idx, node) in zip(range(nx.number_of_nodes(self.G)), self.G.nodes()):
+		for (idx, node) in zip(list(range(nx.number_of_nodes(self.G))), self.G.nodes()):
 			mapping[node] = idx
 		nx.relabel_nodes(self.G, mapping, copy=False)
 		self.p = p
@@ -63,7 +63,7 @@ class DataGraphGen(object):
 
 	def assign_spies(self):
 		n = nx.number_of_nodes(self.G)
-		spy_list = random.sample(range(n), int(math.floor(self.p*n)))
+		spy_list = random.sample(list(range(n)), int(math.floor(self.p*n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
 		nx.set_node_attributes(self.G, spies, 'spy')
 		
@@ -92,7 +92,7 @@ class RegGraphGen(GraphGen):
 		
 		for i in range(self.d-1):
 			perm = np.random.permutation(self.n)
-			mapping = {key:value for (key,value) in zip(range(self.n), perm)}
+			mapping = {key:value for (key,value) in zip(list(range(self.n)), perm)}
 			cycle = nx.relabel_nodes(cycle, mapping) # add a single hamiltonian cycle
 			self.G.add_edges_from(nx.find_cycle(cycle))
 
@@ -100,7 +100,7 @@ class RegGraphGen(GraphGen):
 
 		if self.verbose:
 			degrees = G.degree(G.nodes())
-			print collections.Counter(degrees.values())
+			print(collections.Counter(list(degrees.values())))
 
 
 class QuasiRegThreshGraphGen(GraphGen):
@@ -211,32 +211,32 @@ class QuasiRegGraphGen(GraphGen):
 
 	def generate_anon_graph(self):
 		# build up self.A (the anonymity graph)
-		 for n in self.G.nodes():
-		 	# Don't add edges for non-dandelion nodes
-		 	if self.beta < 1.0 and not self.G.node[n]['dand']:
-		 		continue
-	 		# select outgoing edges from each node's out-edges on the graph
-		 	successors = self.G.successors(n)
-		 	candidates = []
-		 	if self.anon_graph_protocol == VERSION_CHECKING:
-		 		dand_nodes = [v for v in successors if self.G.node[v]['dand']]
+		for n in self.G.nodes():
+			# Don't add edges for non-dandelion nodes
+			if self.beta < 1.0 and not self.G.node[n]['dand']:
+				continue
+			# select outgoing edges from each node's out-edges on the graph
+			successors = self.G.successors(n)
+			candidates = []
+			if self.anon_graph_protocol == VERSION_CHECKING:
+				dand_nodes = [v for v in successors if self.G.node[v]['dand']]
 				if not dand_nodes:
 					candidates = successors
 				else:
 					candidates = dand_nodes
-	 		elif self.anon_graph_protocol == NO_VERSION_CHECKING:
-	 			candidates = successors
+			elif self.anon_graph_protocol == NO_VERSION_CHECKING:
+				candidates = successors
 
- 			out_edges = random.sample(candidates, min([self.d_anon, len(candidates)]))
- 			new_edges = [(n, item) for item in out_edges]
- 			self.A.add_edges_from(new_edges)
+			out_edges = random.sample(candidates, min([self.d_anon, len(candidates)]))
+			new_edges = [(n, item) for item in out_edges]
+			self.A.add_edges_from(new_edges)
 
 class QuasiRegGraphGenEavesdropper(QuasiRegGraphGen):
 	def __init__(self, n, theta, d, verbose = False, d_anon = None):
 		# First create a graph w no spies
 		super(QuasiRegGraphGenEavesdropper, self).__init__(n, 0.0, d, verbose)
 		# Then add  the eavesdroppers
-		eavesdroppers = range(n, n+theta)
+		eavesdroppers = list(range(n, n+theta))
 		honest_nodes = self.G.nodes()
 		self.G.add_nodes_from(eavesdroppers, spy=True)
 		for e in eavesdroppers:
@@ -333,7 +333,7 @@ class CompleteGraphGen(GraphGen):
 	def generate_graph(self):
 		
 		G = nx.complete_graph(self.n).to_directed()
-		spy_list = random.sample(range(self.n), int(math.floor(self.p*self.n)))
+		spy_list = random.sample(list(range(self.n)), int(math.floor(self.p*self.n)))
 		spies = dict([(k, k in spy_list) for k in range(n)])
 		# spies = dict([(k, (random.random() < p)) for k in range(n)])
 		nx.set_node_attributes(G, spies, 'spy')

@@ -17,7 +17,7 @@ class DataGraph(nx.Graph):
 		
 		# Read graph and label nodes from 1 to N
 		mapping = {}
-		for (idx, node) in zip(range(nx.number_of_nodes(self)), self.nodes()):
+		for (idx, node) in zip(list(range(nx.number_of_nodes(self))), self.nodes()):
 			mapping[node] = idx
 		nx.relabel_nodes(self, mapping, copy=False)
 
@@ -131,7 +131,7 @@ class DataGraphDandelion(DataGraphDiffusion):
 	def spread_message(self, source = 0, hops = 0):
 		''' Spread the message according to Dandelion spreading and keep track of all timestamps'''
 
-		print len(self.nodes()), 'nodes'
+		print(len(self.nodes()), 'nodes')
 
 		self.source = source
 		
@@ -163,7 +163,7 @@ class DataGraphDandelion(DataGraphDiffusion):
 
 		active = [(head, n) for n in self.neighbors(head)]
 		while active:
-			print len(active), ' active nodes , with ', len(self.received_timestamps.keys()), ' infected items'
+			print(len(active), ' active nodes , with ', len(list(self.received_timestamps.keys())), ' infected items')
 			new_boundary = []
 
 			# cycle through the active edges
@@ -196,7 +196,7 @@ class DataGraphDandelion(DataGraphDiffusion):
 
 			active = [item for item in new_boundary]
 
-		print 'num infected nodes', len(self.received_timestamps.keys())
+		print('num infected nodes', len(list(self.received_timestamps.keys())))
 
 		# Fluff phase (exponential mechanism, event-based simulation)
 
