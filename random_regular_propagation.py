@@ -8,37 +8,12 @@ from config_random_regular import *
 import networkx as nx
 import random
 import numpy as np
-import matplotlib.pyplot as plt
 import collections
 import math
 import scipy.io
 import sys
+from utils import plot_results, get_num_honest_nodes, plot_graph
 
-
-
-
-def get_num_honest_nodes(G):
-	# List of all spies
-	spies = nx.get_node_attributes(G,'spy')
-	num_spies = list(spies.values()).count(True)
-	
-
-	return (G.number_of_nodes() - num_spies)
-
-def plot_graph(G):
-	pos = nx.circular_layout(G)
-	labels = {}
-	for n in G.nodes():
-		labels[n] = str(n)
-	spies = nx.get_node_attributes(G,'spy')
-	print('num spies', spies)
-	val_map = {True: 'r',
-           		False: 'b'}
-	values = [val_map[i] for i in list(spies.values())]
-
-	nx.draw(G, pos, node_color = values)
-	nx.draw_networkx_labels(G, pos, labels, font_size = 16)
-	plt.show()
 
 def run_sims(G, num_nodes, verbose, sim_type, sim_params):
 	''' Run simulation according to the settings specified in sim_settings'''
@@ -145,8 +120,8 @@ if __name__=='__main__':
 				graph_precision_std[idx] = np.sqrt(graph_precision[idx] * (1.0-graph_precision[idx]) / graph_trials / path_trials)
 				graph_recall[idx] = graph_recall[idx] / path_trials / graph_trials
 				graph_recall_std[idx] = np.sqrt(graph_recall[idx] * (1-graph_recall[idx]) / graph_trials / path_trials)
-				print('Graph precision: ', graph_precision[idx])
-				print('Graph recall: ', graph_recall[idx])
+				# print('Graph precision: ', graph_precision[idx])
+				# print('Graph recall: ', graph_recall[idx])
 				
 				p_means[idx].append(graph_precision[idx])
 				p_stds[idx].append(graph_precision_std[idx])
@@ -154,22 +129,11 @@ if __name__=='__main__':
 				r_means[idx].append(graph_recall[idx])
 				r_stds[idx].append(graph_recall_std[idx])
 
-			
-
-	print('Total p_means', np.array(p_means))
-	# print 'Total p_stds', np.array(p_stds)
-
-	print('Total r_means', np.array(r_means))
-	# print 'Total r_stds', np.array(r_stds)
-
-	
-	print('Values of p', np.array(ps))
 
 
 	# print 'saved to file', filename
 	settings_list = np.zeros((num_sims,), dtype=object)
 	settings_list[:] = [item for item in list(sim_settings.keys())]
-	print(settings_list)
 	scipy.io.savemat('sim_data.mat',{'p_means':np.array(p_means),
 										  'r_means':np.array(r_means), 
 										  'p_stds':np.array(p_stds), 
@@ -178,4 +142,13 @@ if __name__=='__main__':
 										  'num_nodes':n,
 										  'graph_type':sim_graph.__name__,
 										  'sim_settings':settings_list})
+	
+	
+	means = np.array(r_means)
+	stds = np.array(r_stds)
+	ps = np.array(ps)
+	if any(legend):
+		plot_results(means, stds, ps, legend)
+	else:
+		plot_results(means, stds, ps, sim_settings.keys())
 	
