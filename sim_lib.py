@@ -29,9 +29,10 @@ class Simulator(object):
 		self.verbose = verbose
 
 class LineSimulator(Simulator):
-	def __init__(self, A, verbose = False, q = 0.0):
+	def __init__(self, A, verbose = False, q = 0.0, per_tx_q = True):
 		super(LineSimulator, self).__init__(A, verbose)
 		self.q = q
+		self.per_tx_q = per_tx_q
 
 	def run_simulation(self, graph = MAIN_GRAPH):
 		''' Simulates dandelion spreading over a graph. 
@@ -41,39 +42,42 @@ class LineSimulator(Simulator):
 					ANON_GRAPH 	=  anonymity graph 
 		'''
 
+		# Assign the diffusers to the graph
+		A = assign_diffusers(self.A, self.q, nx.number_of_nodes(self.A))
 		# Run a line simulation over A
 		# List of all spies
-		spies = nx.get_node_attributes(self.A,'spy')
+		spies = nx.get_node_attributes(A,'spy')
+		if self.per_tx_q == False:
+			diffusers = nx.get_node_attributes(A, 'diffuser')
 		spy_mapping = {}
 		pred_succ_mapping = {}							#to store mappings predecessor ->node ->successor
 		if (graph == MAIN_GRAPH):
 			A = self.A
 		 
-		for node in self.A.nodes():
+		# Compute the forwarding rules for the graph (which inbound edge maps to which outbound edge)
+		for node in A.nodes():
+			# store the node's predecessors and successors
+			preds = A.predecessors(node)	
+			succs = A.successors(node)
 			# if node is a spy, add it to the dictionary
 			if spies[node]:
 				spy_mapping[node] = []
 			elif incedge==2: # all-to-one
-				succs = self.A.successors(node)
 				pred_succ_mapping[node] = random.choice(succs)
 			elif incedge==1: # per-incoming-edge
 				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
-				preds = self.A.predecessors(node)	
-				succs = self.A.successors(node)
 				for pred in preds:					#for each pred, we randomly allocate a succ
 					pred_succ_mapping[node][pred] = random.choice(succs)
-				if len(pred_succ_mapping[node].values())>1:				
-					if (pred_succ_mapping[node].values())[0]==(pred_succ_mapping[node].values())[1]:
-						pred_succ_mapping[node][node] = (pred_succ_mapping[node].values())[0]
+				if len(list(pred_succ_mapping[node].values()))>1:				
+					if (list(pred_succ_mapping[node].values()))[0]==(list(pred_succ_mapping[node].values()))[1]:
+						pred_succ_mapping[node][node] = (list(pred_succ_mapping[node].values()))[0]
 					else:
 						pred_succ_mapping[node][node] = random.choice(succs)
 				else:		
-					pred_succ_mapping[node][node] = pred_succ_mapping[node].values()[0]			
+					pred_succ_mapping[node][node] = list(pred_succ_mapping[node].values())[0]			
 			elif incedge==3: # one-to-one
 				pred_succ_mapping[node] = {}		#dict to hold mapping for this node					
-				preds = self.A.predecessors(node)	
-				succs = self.A.successors(node)
-
+				
 				if len(succs) > 0:
 					# map your own transaction randomly to the out-nodes
 					pred_succ_mapping[node][node] = random.choice(succs)
@@ -88,17 +92,17 @@ class LineSimulator(Simulator):
 						if not succ_list:
 							succ_list = [item for item in succs]
 							random.shuffle(succ_list)
-			elif incedge == 4:
-				pred_succ_mapping[node] = {}
-				preds = self.A.predecessors(node)	
-				succs = self.A.successors(node)
-				for pred in preds:
-					pred_succ_mapping[node][pred] = random.choice(succs)
-				pred_succ_mapping[node][node] = random.choice(succs)
+			# elif incedge == 4: #
+			# 	pred_succ_mapping[node] = {}
+			# 	for pred in preds:
+			# 		pred_succ_mapping[node][pred] = random.choice(succs)
+			# 	pred_succ_mapping[node][node] = random.choice(succs)
 
 		# find the nodes reporting to each spy
-		hops = np.zeros(2*len(self.A.nodes()))
-		for node in self.A.nodes():
+		hops = np.zeros(2*len(A.nodes()))
+
+		# Propagate one transaction per node in the graph
+		for node in A.nodes():
 			# print("starting node ", node)
 			if spies[node]:
 				continue	
@@ -110,7 +114,7 @@ class LineSimulator(Simulator):
 			# print("\n")
 			while True:
 				if tail in path_list and incedge!=0:
-					neighbors = np.array(self.A.successors(tail))
+					neighbors = np.array(A.successors(tail))
 					if (incedge==1 or incedge==3 or incedge==4):
 						if (len(neighbors)>1 and tail in pred_succ_mapping):
 							if pre_tail in pred_succ_mapping[tail]:
@@ -129,7 +133,7 @@ class LineSimulator(Simulator):
 				elif incedge==2:
 					now = pred_succ_mapping[tail]
 				elif incedge==0:
-					neighbors = list(self.A.successors(tail))
+					neighbors = list(A.successors(tail))
 					now = random.choice(neighbors)
 				pre_tail = tail
 				path_list.append(tail)
@@ -138,22 +142,23 @@ class LineSimulator(Simulator):
 				if spies[tail]:
 					spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
 					break
-				if np.random.binomial(1, self.q):
+				if (self.per_tx_q and np.random.binomial(1, self.q)) or \
+					(not self.per_tx_q and diffusers[tail] == True):
 					# end the stem
 					if tail in spy_mapping:
 						spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
 					else:
 						spy_mapping[tail] = [SpyInfo(tail, pre_tail, node)]
 					break
-				if path_length > nx.number_of_nodes(self.A):
+				if path_length > nx.number_of_nodes(A):
 				# if tail in 
 					# there are no spies on this path, so we'll just assign the 
 					#   last node to see the message to a spy
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, tail, node))
 					break
 			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+				print('Node ', node, ' traversed ', path_length, 'hops')
 			hops[path_length] +=1
 
 		return spy_mapping, hops
@@ -164,8 +169,8 @@ class LineSimulator(Simulator):
 
 
 class FirstSpyLineSimulator(LineSimulator):
-	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0, q=0.0):
-		super(FirstSpyLineSimulator, self).__init__(A, verbose, q)
+	def __init__(self, A, num_honest_nodes, verbose = False, p_and_r = False, edgebased=0, q=0.0, per_tx_q=True):
+		super(FirstSpyLineSimulator, self).__init__(A, verbose, q, per_tx_q)
 		self.p_and_r = p_and_r
 		self.num_honest_nodes = num_honest_nodes
 		global incedge
@@ -192,17 +197,17 @@ class FirstSpyEstimator(object):
 		precision = 0
 		recall = 0
 		if self.verbose:
-			print '\n'
+			print('\n')
 
 		exits = {}
-		for spy, info in spy_mapping.iteritems():
+		for spy, info in spy_mapping.items():
 			if self.verbose:
-				print 'spy', spy
+				print('spy', spy)
 				exit_list = [item.exit_node for item in info]
 				sources = [item.source for item in info]
 				for exit in set(exit_list):
-					print 'exit', exit
-					print 'sources', [sources[i] for i in range(len(exit_list)) if exit_list[i] == exit]
+					print('exit', exit)
+					print('sources', [sources[i] for i in range(len(exit_list)) if exit_list[i] == exit])
 			
 			for item in info:
 				# if verbose:
@@ -213,14 +218,14 @@ class FirstSpyEstimator(object):
 				else:
 					exits[item.exit_node].append(item.source)
 		nodes_wards = np.zeros(int(2*len(self.A.nodes()))) 
-		for exit, ward in exits.iteritems():
+		for exit, ward in exits.items():
 			nodes_wards[len(ward)] +=1
 			if exit in ward:
 				precision += 1.0 / len(ward)
 				recall += 1.0
 		if self.verbose:
-			print 'num_honest_nodes', self.num_honest_nodes
-			print 'total precision', precision
+			print('num_honest_nodes', self.num_honest_nodes)
+			print('total precision', precision)
 		precision = precision / self.num_honest_nodes
 		recall = recall / self.num_honest_nodes
 		
@@ -251,18 +256,13 @@ class MaxWeightEstimator(object):
 			honest_node_mapping[node] = cnt
 			inv_honest_node_mapping[cnt] = node
 			cnt += 1
-		honest_node_indices = honest_node_mapping.values()
-		# print 'honest_node_mapping', honest_node_mapping
+		honest_node_indices = list(honest_node_mapping.values())
 
 		# Next, create a random mapping, to randomize the labeling of nodes,
 		# since networkx max-weight algorithm doesn't seem to randomize
 		mapping = list(np.random.permutation(honest_node_indices))
 		msg_mapping = [i+1 for i in np.random.permutation(honest_node_indices)]
-		# print 'mapping', mapping
-		# print 'message mapping', msg_mapping
 
-		# for msg, lik in self.weights.iteritems():
-		# 	print 'msg ', msg, ' has likelihoods ', lik
 		inv_mapping = [mapping.index(i) for i in honest_node_indices]
 
 		
@@ -273,19 +273,14 @@ class MaxWeightEstimator(object):
 		H.add_nodes_from(honest_nodes)	# servers
 		H.add_nodes_from(messages) 		# messages
 		for msg in self.honest_nodes: 	# for each real message tag
-			for src, likelihood in self.weights[msg].iteritems():	# and for each candidate source (+likelihood)
+			for src, likelihood in self.weights[msg].items():	# and for each candidate source (+likelihood)
 				# add an edge from the relabeled source to the relabeled message with the appropriate weight
 
 				H.add_edge(mapping[honest_node_mapping[src]], -msg_mapping[honest_node_mapping[msg]], weight = likelihood)
 
-		# print nx.adjacency_matrix(H).todense()
-		# print 'nodes', H.nodes()
-		# left, right = nx.bipartite.sets(H)
-		# print 'left, right', left, right
+
 		matching = nx.max_weight_matching(H, maxcardinality = True)
-		# print 'matching', matching
 		estimate = []
-		# for a,b in matching.iteritems():
 		for edge in matching:
 			(a, b) = edge
 			if a < 0 and b >= 0:
@@ -341,18 +336,13 @@ class MaxWeightVerCheckEstimator(MaxWeightEstimator):
 			honest_node_mapping[node] = cnt
 			inv_honest_node_mapping[cnt] = node
 			cnt += 1
-		honest_node_indices = honest_node_mapping.values()
-		# print 'honest_node_mapping', honest_node_mapping
+		honest_node_indices = list(honest_node_mapping.values())
 
 		# Next, create a random mapping, to randomize the labeling of nodes,
 		# since networkx max-weight algorithm doesn't seem to randomize
 		mapping = list(np.random.permutation(honest_node_indices))
 		msg_mapping = [i+1 for i in np.random.permutation(honest_node_indices)]
-		# print 'mapping', mapping
-		# print 'message mapping', msg_mapping
 
-		# for msg, lik in self.weights.iteritems():
-		# 	print 'msg ', msg, ' has likelihoods ', lik
 		inv_mapping = [mapping.index(i) for i in honest_node_indices]
 
 		
@@ -363,7 +353,7 @@ class MaxWeightVerCheckEstimator(MaxWeightEstimator):
 		H.add_nodes_from(honest_nodes)	# servers
 		H.add_nodes_from(messages) 		# messages
 		for msg in self.honest_nodes: 	# for each real message tag
-			for src, likelihood in self.weights[msg].iteritems():	# and for each candidate source (+likelihood)
+			for src, likelihood in self.weights[msg].items():	# and for each candidate source (+likelihood)
 				# add an edge from the relabeled source to the relabeled message with the appropriate weight
 
 				H.add_edge(mapping[honest_node_mapping[src]], -msg_mapping[honest_node_mapping[msg]], weight = likelihood)
@@ -375,7 +365,7 @@ class MaxWeightVerCheckEstimator(MaxWeightEstimator):
 		matching = nx.max_weight_matching(H, maxcardinality = True)
 		# print 'matching', matching
 		estimate = []
-		for a,b in matching.iteritems():
+		for a,b in matching.items():
 			if a < 0 and b >= 0:
 				item = [inv_honest_node_mapping[msg_mapping.index(-a)], inv_honest_node_mapping[mapping.index(b)]]
 			elif b < 0 and a >= 0:
@@ -399,7 +389,7 @@ class MaxWeightLineSimulator(LineSimulator):
 		self.num_honest_nodes = num_honest_nodes
 		self.p_and_r = p_and_r
 
-		honest_nodes = [node for node in self.A if not self.A.node[node]['spy']]
+		honest_nodes = [node for node in self.A if not self.A.nodes[node]['spy']]
 
 		# Run the simulation
 		spy_mapping, hops = super(MaxWeightLineSimulator, self).run_simulation()
@@ -427,7 +417,7 @@ class MaxWeightLineSimulator(LineSimulator):
 		self.weights = {}
 		
 		# first, map the spy info to wards: (exit, messages) tuples
-		for spy, info in spy_mapping.iteritems():
+		for spy, info in spy_mapping.items():
 			
 			for item in info: # for each message that exited to spy
 				if item.exit_node not in exits:
@@ -439,7 +429,7 @@ class MaxWeightLineSimulator(LineSimulator):
 			at the given exit node. The likelihoods are equal for 
 			all nodes at a given exit node.
 		'''
-		for exit, ward in exits.iteritems():
+		for exit, ward in exits.items():
 			relayed_ward = [item[0] for item in ward if item[1]]
 			not_relayed_ward = [item[0] for item in ward if not item[1]]
 
@@ -470,11 +460,11 @@ class MaxWeightLineSimulator(LineSimulator):
 		n_tilde = float(self.num_honest_nodes) / self.A.number_of_nodes()
 		local_tree_depth = math.floor(1.5 / n_tilde)
 
-		spies = [node for node in self.A.nodes() if self.A.node[node]['spy']]
+		spies = [node for node in self.A.nodes() if self.A.nodes[node]['spy']]
 
 		likelihoods = {}
 		shortest_paths = nx.shortest_path(self.A, target = exit)
-		for source, path in shortest_paths.iteritems():
+		for source, path in shortest_paths.items():
 			if source in spies:
 				continue
 			if (not relayed_to_spy) and (source == exit):
@@ -518,9 +508,13 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 			with diffusion over the main graph. 
 		'''
 
+		# Assign the diffusers to the graph
+		self.A = assign_diffusers(self.A, self.q, len(self.A.nodes()))
 		# Run a line simulation over A
 		# List of all spies
 		spies = nx.get_node_attributes(self.A,'spy')
+		if self.per_tx_path == False:
+			diffusers = nx.get_node_attributes(self.A, 'diffuser')
 		spy_mapping = {}
 		# Make a dict of spies
 		for node in self.A.nodes():
@@ -545,7 +539,8 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 				if spies[tail]:
 					spy_mapping[tail].append(SpyInfo(tail, pre_tail, node))
 					break
-				if np.random.binomial(1, self.q):
+				if (self.per_tx_q and np.random.binomial(1, self.q)) or \
+					(not self.per_tx_q and diffusers[tail] == True):
 					# end the stem
 					# now simulate diffusion starting from tail, and use the first-spy est
 					# 	to guess who was the source of the diffusion process
@@ -561,11 +556,11 @@ class MaxWeightLineSimulatorUnknownTerminus(MaxWeightLineSimulator):
 				if path_length > nx.number_of_nodes(self.A):
 					# there are no spies on this path, so we'll just assign the 
 					#   last node to see the message to a spy
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, tail, node))
 					break
 			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+				print('Node ', node, ' traversed ', path_length, 'hops')
 
 		return spy_mapping
 
@@ -596,17 +591,10 @@ class FirstSpyLineSimulatorMultipleTx(LineSimulator):
 			for spy in spies:
 				self.spy_distribution[node][spy] = 0
 
-				# # Create vector of spy nodes
-		# spies = nx.get_node_attributes(self.A,'spy')
-		# observations = {}
-		# for spy in spies:
-		# 	predecessors = self.A.predecessors(spy)
-		# 	for predecessor in predecessors:
-		# 		observations[(spy,predecessor)] = 0
 
 	def update_spy_distribution(self, spy_mapping):
 		# Update the first spy counts for each source
-		for spy, info in spy_mapping.iteritems():
+		for spy, info in spy_mapping.items():
 			for item in info:
 				self.spy_distribution[item.source][spy] += 1.0 / self.num_tx
 
@@ -657,7 +645,7 @@ class DiffusionSimulator(Simulator):
 					# there are no spies on this path, so we'll just assign the 
 					#   last node to see the message to a spy
 
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, target, node))
 					break
 				infected += [target]
@@ -667,7 +655,7 @@ class DiffusionSimulator(Simulator):
 
 				# add next to boundary, remove the infecting node if it is eclipsed
 			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+				print('Node ', node, ' traversed ', path_length, 'hops')
 			hops[path_length] +=1
 
 		return spy_mapping, hops
@@ -736,7 +724,7 @@ class FirstSpyDiffusionSimulator(DiffusionSimulator):
 					# there are no spies on this path, so we'll just assign the 
 					#   last node to see the message to a spy
 
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, target, node))
 					break
 				infected += [target]
@@ -746,7 +734,7 @@ class FirstSpyDiffusionSimulator(DiffusionSimulator):
 
 				# add next to boundary, remove the infecting node if it is eclipsed
 			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+				print('Node ', node, ' traversed ', path_length, 'hops')
 
 		return spy_mapping
 
@@ -798,7 +786,7 @@ class FirstSpyDiffusionSimulatorAsymmetric(DiffusionSimulator):
 					weights = [2 if tuple(e) in self.A.edges() else 1 for e in boundary_edges]
 					# print 'weights', weights
 					weights = [float(i) / sum(weights) for i in weights]
-					next_idx = np.random.choice(range(len(boundary_edges)), 1, p=weights)[0]
+					next_idx = np.random.choice(list(range(len(boundary_edges))), 1, p=weights)[0]
 					next = boundary_edges[next_idx]
 					# print 'chose', next
 				else:
@@ -815,7 +803,7 @@ class FirstSpyDiffusionSimulatorAsymmetric(DiffusionSimulator):
 					# there are no spies on this path, so we'll just assign the 
 					#   last node to see the message to a spy
 
-					spy = random.choice(spy_mapping.keys())
+					spy = random.choice(list(spy_mapping.keys()))
 					spy_mapping[spy].append(SpyInfo(spy, target, node))
 					break
 				infected += [target]
@@ -825,7 +813,7 @@ class FirstSpyDiffusionSimulatorAsymmetric(DiffusionSimulator):
 
 				# add next to boundary, remove the infecting node if it is eclipsed
 			if self.verbose:
-				print 'Node ', node, ' traversed ', path_length, 'hops'
+				print('Node ', node, ' traversed ', path_length, 'hops')
 
 
 		return spy_mapping
@@ -873,7 +861,11 @@ class FirstSpyDiffusionSimulatorOneSource(DiffusionSimulator):
 
 		return None
 
-
+def assign_diffusers(A, q, n):
+	diffuser_list = random.sample(list(range(n)), int(math.floor(q*n)))
+	diffusers = dict([(k, k in diffuser_list) for k in range(n)])
+	nx.set_node_attributes(A, diffusers, 'diffuser')
+	return A
 	
 
 

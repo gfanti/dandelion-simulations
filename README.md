@@ -11,8 +11,8 @@ The appropriate parameter configurations for the different figures are listed be
 
 Dependencies: 
 
-- Python 2.7 
-- NetworkX 2.2
+- Python 3.11.7
+- NetworkX 3.1
 
 #### Figure 3: Average precision as a function of p for random, directed, d-regular graphs
 

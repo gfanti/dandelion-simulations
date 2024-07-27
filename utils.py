@@ -1,5 +1,8 @@
 # utils.py
 import argparse
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
 
 # Spreading mechanism constants
 TRICKLE = 0
@@ -27,7 +30,7 @@ def write_results(results_names, results_data, param_types, params, run_num = No
 		f.write(param_type)
 		f.write(': ')
 		for item in param:
-		  f.write("%s " % item)		
+			f.write("%s " % item)		
 		f.write('\n')
 
 	for (result_type, result) in zip(results_names, results_data):
@@ -35,8 +38,8 @@ def write_results(results_names, results_data, param_types, params, run_num = No
 		f.write('\n')
 
 		for item in result:
-		  f.write("%s " % item)
-	  	f.write('\n')
+			f.write("%s " % item)
+		f.write('\n')
 
 	f.close()
 
@@ -61,11 +64,56 @@ def parse_arguments():
 	if not (args.run is None):
 		args.write = True
 
-	print '---Selected Parameters---'
-	print 'verbose: ', args.verbose
-	print 'write to file: ', args.write
-	print 'spreading mechanism: ', args.spreading
-	print 'estimators: ', args.estimators
-	print 'run: ', args.run
-	print 'num trials: ', args.trials, '\n'
+	print('---Selected Parameters---')
+	print('verbose: ', args.verbose)
+	print('write to file: ', args.write)
+	print('spreading mechanism: ', args.spreading)
+	print('estimators: ', args.estimators)
+	print('run: ', args.run)
+	print('num trials: ', args.trials, '\n')
 	return args
+
+def plot_results(means, stds, ps, labels=None):
+	
+
+	# Create the plot
+	for idx in range(means.shape[0]):
+		print("labels", labels)
+		if any(labels):
+			plt.errorbar(ps, means[idx], yerr=stds[idx], fmt='o-', label=list(labels)[idx])
+		else:
+			plt.errorbar(ps, means[idx], yerr=stds[idx], fmt='o-')
+			
+
+
+	# Customize the plot
+	# plt.title("Plot of p_means with Error Bars")
+	plt.xlabel("Fraction of Spies (p)")
+	plt.ylabel("Mean Precision")
+	plt.grid(True)
+	if any(labels):
+		plt.legend()
+	plt.show()
+
+def get_num_honest_nodes(G):
+	# List of all spies
+	spies = nx.get_node_attributes(G,'spy')
+	num_spies = list(spies.values()).count(True)
+	
+
+	return (G.number_of_nodes() - num_spies)
+
+def plot_graph(G):
+	pos = nx.circular_layout(G)
+	labels = {}
+	for n in G.nodes():
+		labels[n] = str(n)
+	spies = nx.get_node_attributes(G,'spy')
+	print('num spies', spies)
+	val_map = {True: 'r',
+           		False: 'b'}
+	values = [val_map[i] for i in list(spies.values())]
+
+	nx.draw(G, pos, node_color = values)
+	nx.draw_networkx_labels(G, pos, labels, font_size = 16)
+	plt.show()

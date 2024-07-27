@@ -8,8 +8,8 @@ import numpy as np
 
 
 
-filename = 'data/bitcoin.gexf'
-# filename = 'data/random_regular.gexf'
+# filename = 'data/bitcoin.gexf'
+filename = 'data/random_regular.gexf'
 # filename = 'data/tree_5.gexf'
 
 # Mean delay of diffusion spreading, in seconds
@@ -26,13 +26,13 @@ G = DataGraphDandelion(filename, spreading_time = spreading_time, lambda1 = diff
 timing_results = []
 timing_stds = []
 for hops in hops_list:
-	print 'Number of hops ', hops
+	print('Number of hops ', hops)
 
 	runtimes = []
 	for trial in range(args.trials):
 
 		if (trial % 10) == 0:
-			print 'On trial ', trial+1, ' out of ', args.trials
+			print('On trial ', trial+1, ' out of ', args.trials)
 
 		source = random.choice(G.nodes())
 	
@@ -50,8 +50,8 @@ for hops in hops_list:
 
 	timing_results.append(avg_time)
 	timing_stds.append(std_time)
-	print 'Timing results', timing_results
+	print('Timing results', timing_results)
 
-print 'hops', hops_list
-print 'timing', timing_results
-print 'standard deviation', timing_stds	
+print('hops', hops_list)
+print('timing', timing_results)
+print('standard deviation', timing_stds)	
